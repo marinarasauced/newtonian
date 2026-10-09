@@ -144,11 +144,51 @@ class Simulator:
         if self.viewer_type == "gl":
             self.viewer = newton.viewer.ViewerGL()
             self.viewer.set_model(self.model)
-            self.viewer.set_reset_callback(self._reset)
+            self._ui_setup()
         elif self.viewer_type != "none":
             raise ValueError(f"viewer must be 'none' or 'gl'")
 
         self._capture()
+
+    def _ui_setup(self) -> None:
+        """
+        """
+        v = self.viewer
+        v.wind = None
+        if v.gui is None:
+            return
+        self._ui_stats = (0.0, 0.0)
+        v.gui._render_left_panel = lambda: None
+        v.register_ui_callback(self._ui_measure, position="stats")
+        v.register_ui_callback(self._ui_controls, position="free")
+
+    def _ui_measure(self, imgui) -> None:
+        """
+        """
+        pos, size = imgui.get_window_pos(), imgui.get_window_size()
+        self._ui_stats = (pos.y + size.y, size.x)
+
+    def _ui_controls(self, imgui) -> None:
+        """
+        """
+        v = self.viewer
+        s = v.gui.ui.dpi_scale
+        bottom, width = self._ui_stats
+        size = imgui.ImVec2(width - 2 * imgui.get_style().window_padding.x, 0)
+        imgui.set_next_window_pos(imgui.ImVec2(imgui.get_io().display_size.x - 10 * s, bottom + 10 * s), pivot=imgui.ImVec2(1.0, 0.0))
+        imgui.set_next_window_bg_alpha(0.7)
+        flags = (imgui.WindowFlags_.no_decoration.value | imgui.WindowFlags_.always_auto_resize.value | imgui.WindowFlags_.no_saved_settings.value | imgui.WindowFlags_.no_focus_on_appearing.value | imgui.WindowFlags_.no_nav.value | imgui.WindowFlags_.no_move.value)
+        expanded, _ = imgui.begin("Simulation Controls", flags=flags)
+        if expanded:
+            if imgui.button("Resume" if v._paused else "Pause", size):
+                self.pause(paused=not v._paused)
+            imgui.begin_disabled(not v._paused)
+            if imgui.button("Step", size):
+                v._step_requested = True
+            imgui.end_disabled()
+            if imgui.button("Reset", size):
+                self.reset()
+        imgui.end()
 
     def _capture(self) -> None:
         """
