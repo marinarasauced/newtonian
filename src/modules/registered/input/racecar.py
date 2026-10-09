@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import math
 
-from ackermann_msgs.msg import AckermannDriveStamped
 from geometry_msgs.msg import Twist
 
 from src.modules.params import Parameters
@@ -12,33 +11,28 @@ from src.modules.registered.input.base import INPUTS, Input
 
 @INPUTS.register("racecar")
 class InputRacecar(Input):
+    msg_type = Twist
 
     def __init__(self, name: str, p: Parameters) -> None:
         super().__init__(name=name, p=p)
-        kind = p.get("msg", "twist")
-        if kind == "ackermann":
-            self.msg_type = AckermannDriveStamped
-        elif kind == "twist":
-            self.msg_type = Twist
-        else:
-            raise ValueError(f"input '{name}' must be 'twist' or 'ackermann'")
 
-        self.angular = p.get("angular", "yaw_rate")
         self.L = float(p.get("wheelbase", 0.33))
         self.T = float(p.get("track", 0.24))
         self.r = float(p.get("wheel_radius", 0.05))
         self.max_steer = float(p.get("max_steer", 0.4189))
         self.max_speed = float(p.get("max_speed", 10.0))
+        self.max_accel = float(p.get("max_accel", 3.0))
+        self.max_decel = float(p.get("max_decel", 6.0))
+        self.max_steer_rate = float(p.get("max_steer_rate", 3.0))
+        self._v = 0.0
+        self._delta = 0.0
+        self._goal = (0.0, 0.0)
 
         if "timeout" not in p:
             self.timeout = 0.5
 
     def _command(self, msg) -> tuple[float, float]:
-        if self.msg_type is not Twist:
-            return msg.drive.speed, msg.drive.steering_angle
         v = msg.linear.x
-        if self.angular == "steering_angle":
-            return v, msg.angular.z
         if abs(v) < 1.0e-3:
             return v, 0.0
         return v, math.atan(self.L * msg.angular.z / v)
@@ -64,13 +58,13 @@ class InputRacecar(Input):
                 raise ValueError(f"input '{self.name}' wheel_joints keys must be in ('front_left', 'front_right', 'rear_left', 'rear_right')")
 
     def on_timeout(self, sim) -> None:
-        self._set(sim, 0.0, 0.0)
+        self._goal = (0.0, 0.0)
 
     def handle(self, sim, msg) -> None:
         v, delta = self._command(msg)
         v = max(-self.max_speed, min(self.max_speed, v))
         delta = max(-self.max_steer, min(self.max_steer, delta))
-        self._set(sim, v, delta)
+        self._goal = (v, delta)
 
     def _set(self, sim, v: float, delta: float) -> None:
         L, half = self.L, self.T / 2.0
@@ -94,3 +88,20 @@ class InputRacecar(Input):
         for role, qd in self.wheels.items():
             sim.targets.qd[qd] = speeds[role] / self.r
         sim.targets.dirty = True
+
+    def reset(self) -> None:
+        super().reset()
+        self._v = 0.0
+        self._delta = 0.0
+        self._goal = (0.0, 0.0)
+
+    def apply(self, sim) -> None:
+        super().apply(sim)
+        v, delta = self._goal
+        if v == self._v and delta == self._delta:
+            return
+        dt = sim.frame_dt
+        rate = self.max_accel if abs(v) > abs(self._v) and v * self._v >= 0.0 else self.max_decel
+        self._v += max(-rate * dt, min(rate * dt, v - self._v))
+        self._delta += max(-self.max_steer_rate * dt, min(self.max_steer_rate * dt, delta - self._delta))
+        self._set(sim, self._v, self._delta)
