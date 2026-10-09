@@ -83,6 +83,8 @@ class Simulator:
         self._body_q = None
         self._bvh_fresh = False
 
+        self._paused = False
+
         with wp.ScopedDevice(self.device):
             self._build()
 
@@ -142,6 +144,7 @@ class Simulator:
         if self.viewer_type == "gl":
             self.viewer = newton.viewer.ViewerGL()
             self.viewer.set_model(self.model)
+            self.viewer.set_reset_callback(self._reset)
         elif self.viewer_type != "none":
             raise ValueError(f"viewer must be 'none' or 'gl'")
 
@@ -183,6 +186,26 @@ class Simulator:
             self.state_0, self.state_1 = self.state_1, self.state_0
         if self._need_contacts and contacts is not None:
             self.solver_plugin.update_contacts(self.solver, contacts, self.state_0)
+
+    def _reset(self) -> None:
+        """
+        """
+        self.reset()
+        self.pause(paused=True)
+
+    def pause(self, paused: bool) -> None:
+        """
+        """
+        self._paused = paused
+        if self.viewer is not None:
+            self.viewer._paused = paused
+
+    def stepable(self) -> bool:
+        """
+        """
+        if self.viewer is not None:
+            return self.viewer.should_step()
+        return not self._paused
 
     def step(self) -> None:
         """

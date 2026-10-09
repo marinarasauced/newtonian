@@ -41,7 +41,6 @@ class NewtonNode(Node):
         self.sim: Simulator | None = None
         self.publishers_: dict[str, Publisher] = {}
         self.subscriptions_: list[Subscription] = []
-        self.paused = False
         self.clock_pub = self.create_publisher(msg_type=Clock, topic="/clock", qos_profile=10)
         self.create_service(srv_type=Trigger, srv_name="~/reset", callback=self._on_reset)
         self.create_service(srv_type=Trigger, srv_name="~/rebuild", callback=self._on_rebuild)
@@ -106,10 +105,9 @@ class NewtonNode(Node):
             self.get_logger().info("viewer closed, shutting down ...")
             rclpy.try_shutdown()
             return
-        if not self.paused:
+        if sim.stepable():
             sim.step()
-            stamp = self._stamp(sim=sim)
-            self.clock_pub.publish(Clock(clock=stamp))
+            self.clock_pub.publish(Clock(clock=self._stamp(sim=sim)))
             # for s in sim.sense():
             #     self.publishers_[s.name].publish(s.to_msg(stamp))
         sim.render()
@@ -140,8 +138,9 @@ class NewtonNode(Node):
     def _on_pause(self, request: SetBool.Request, response: SetBool.Response) -> SetBool.Response:
         """
         """
-        self.paused = bool(request.data)
-        response.success = True
+        if self.sim is not None:
+            self.sim.pause(paused=bool(request.data))
+        response.success = self.sim is not None
         return response
 
     def destroy_node(self) -> None:
