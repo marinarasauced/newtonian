@@ -22,6 +22,7 @@ class Input:
         self.p = p
 
         self.topic: str = p.get("topic", name)
+        self.qos: str = p.get("qos", "default")
         self.qos_depth = int(p.get("qos_depth", 10))
         self.robot_name: str | None = p.get("robot", None)
         self.timeout = float(p.get("timeout", 0.0))

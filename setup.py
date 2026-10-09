@@ -1,9 +1,16 @@
 
 from glob import glob
+import os
 from setuptools import find_packages, setup
 
 
 PACKAGE = 'newtonian'
+
+
+def tree(source: str) -> list[tuple[str, list[str]]]:
+    """
+    """
+    return [(os.path.join('share', PACKAGE, root), [os.path.join(root, f) for f in files]) for root, _, files in os.walk(source)]
 
 
 setup(
@@ -15,6 +22,7 @@ setup(
         ('share/' + PACKAGE, ['package.xml']),
         ('share/' + PACKAGE + '/config', glob('config/*.yaml')),
         ('share/' + PACKAGE + '/launch', glob('launch/*.launch.py')),
+        *tree(source='descriptions'),
     ],
     package_data={'': ['py.typed']},
     install_requires=['setuptools'],

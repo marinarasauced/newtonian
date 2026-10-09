@@ -24,16 +24,17 @@ newton:
 
     environment:                        # multiple environments supported
       ground: {type: "default", "mu": 1.0}
-      track: {type: "track", map: "", wall_height: 0.3}
+      track: {type: "track", map: "package://newtonian/descriptions/tracks/oval.yaml", wall_height: 0.3}
 
     robots:
       racecar:                          # name of robot (in case of multiple)
         type: "mjcf"                    # 'mjcf' | 'urdf' | 'usd'
-        file: package://newtonian/assets/racecar.xml
-        pose: [0.0, -30., 0.0, 0.0, 0.0, 0.0]
+        file: package://newtonian/descriptions/racecar.xml
+        pose: [0.0, -3.0, 0.0, 0.0, 0.0, 0.0]
         floating: true
         loader_args:
           enable_self_collisions: false
+          force_show_colliders: true    # required for ui
         drives:                         # 'none' | 'position' | 'velocity' | 'position_velocity' | 'effort'
           wheels: {joints: "*_wheel_joint", mode: "velocity", ke: 0.0, kd: 2.0, effort_limit: 5.0}
           steering: {joints: "*_steer_joint", mode: "position", ke: 20.0, kd: 0.5}
