@@ -10,6 +10,7 @@ def shorthand(label: str) -> str:
     """
     return label.rsplit("/", 1)[-1]
 
+
 def match(names: list[str], pattern: str | list[str]) -> list[int]:
     """
     Returns indices of 'names' whose shorthand matches any glob in 'pattern'.

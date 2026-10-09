@@ -4,7 +4,7 @@ from __future__ import annotations
 import newton
 
 from src.modules.params import Parameters
-from src.modules.registered.robots.utils import match
+from src.modules.registered.robots.utils.common import match
 
 
 DRIVE_MODES = {
@@ -32,9 +32,11 @@ def _dofs(builder: newton.ModelBuilder, joint: int) -> range:
     start = builder.joint_qd_start[joint]
     return range(start, start + sum(builder.joint_dof_dim[joint]))
 
-def apply_drives(builder: newton.ModelBuilder, drives: Parameters) -> None:
+
+def apply_drives(builder: newton.ModelBuilder, drives: Parameters) -> dict[int, tuple[float, float]]:
     """
     """
+    limp: set[int] = set()
     for drive in drives.children():
         d = drives.subtree(drive)
         joints = match(names=builder.joint_label, pattern=d.get("joints"))
@@ -43,8 +45,15 @@ def apply_drives(builder: newton.ModelBuilder, drives: Parameters) -> None:
         mode = d.get("mode", None)
         for j in joints:
             for dof in _dofs(builder=builder, joint=j):
+                limp.add(dof)
                 if mode is not None:
                     builder.joint_target_mode[dof] = int(DRIVE_MODES[mode])
                 for key, field in _DRIVE_FIELDS.items():
                     if key in d:
                         getattr(builder, field)[dof] = float(d.get(key))
+    gains = {}
+    for dof in sorted(limp):
+        gains[dof] = (builder.joint_target_ke[dof], builder.joint_target_kd[dof])
+        builder.joint_target_ke[dof] = 0.0
+        builder.joint_target_kd[dof] = 0.0
+    return gains

@@ -4,13 +4,14 @@ from __future__ import annotations
 from fnmatch import fnmatchcase
 
 import newton
+import numpy as np
 
 from src.modules.params import Parameters
 from src.modules.paths import resolve
 from src.modules.registry import Registry
-from src.modules.registered.robots.joints import apply_initial_joint_q
-from src.modules.registered.robots.drives import apply_drives
-from src.modules.registered.robots.utils import shorthand
+from src.modules.registered.robots.utils.joints import apply_initial_joint_q
+from src.modules.registered.robots.utils.drives import apply_drives
+from src.modules.registered.robots.utils.common import shorthand
 from src.modules.utils import convert_pose_to_transform
 
 
@@ -24,6 +25,11 @@ class Robot:
     def __init__(self, name: str, p: Parameters) -> None:
         self.name = name
         self.p = p
+
+        self._gain_dofs = np.zeros(0, dtype=np.int32)
+        self._gains = np.zeros((0, 2), dtype=np.float32)
+        self.engaged = True
+        self._sim = None
 
     def load(self, builder: newton.ModelBuilder, path: str, xform, floating: bool, args: dict) -> None:
         """
@@ -48,10 +54,14 @@ class Robot:
             args=p.subtree("loader_args").as_kwargs(),
         )
 
-        apply_drives(builder=builder, drives=p.subtree("drives"))
+        gains = apply_drives(builder=builder, drives=p.subtree("drives"))
         apply_initial_joint_q(builder=builder, values=p.subtree("initial_joint_q").as_kwargs())
-        
+
+        dof_offset = scene.joint_dof_count
         scene.add_builder(builder=builder, label_prefix=self.name)
+        self._gain_dofs = np.array([dof_offset + d for d in gains], dtype=np.int32)
+        self._gains = np.array(list(gains.values()), dtype=np.float32).reshape(-1, 2)
+        self.engaged = not len(self._gain_dofs)
 
     def on_model(self, sim) -> None:
         """
@@ -68,11 +78,31 @@ class Robot:
         if not self.bodies:
             raise ValueError(f"robot '{self.name}' has no bodies in the model")
         self.root = min(self.bodies)
+        self._sim = sim
+
+    def engage(self, sim) -> None:
+        """
+        """
+        if not self.engaged:
+            self._set_gains(sim, self._gains)
+            self.engaged = True
 
     def reset(self) -> None:
         """
         """
-        pass
+        if self.engaged and len(self._gain_dofs):
+            self._set_gains(self._sim, np.zeros_like(self._gains))
+            self.engaged = False
+
+    def _set_gains(self, sim, gains: np.ndarray) -> None:
+        """
+        """
+        model = sim.model
+        for col, arr in enumerate((model.joint_target_ke, model.joint_target_kd)):
+            values = arr.numpy()
+            values[self._gain_dofs] = gains[:, col]
+            arr.assign(values)
+        sim.solver.notify_model_changed(newton.ModelFlags.JOINT_DOF_PROPERTIES)
 
     def _find(self, table: dict[int, str], pattern, what: str, robot: str) -> list[int]:
         """

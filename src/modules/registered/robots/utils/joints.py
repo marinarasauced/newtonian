@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import newton
 
-from src.modules.registered.robots.utils import match
+from src.modules.registered.robots.utils.common import match
 
 
 def apply_initial_joint_q(builder: newton.ModelBuilder, values: dict) -> None:
