@@ -60,6 +60,7 @@ class NewtonianSimulator:
         self.frame_dt = 1.0 / self.frame_rate
         self.sim_dt = self.frame_dt / self.substeps
 
+        self.gravity = float(s.get("gravity", -9.81))
         self.viewer_type = s.get("viewer", "none")
         self.use_cuda_graph = bool(s.get("cuda_graph", True))
 
@@ -76,7 +77,7 @@ class NewtonianSimulator:
         # sensors
         self._needs_contacts = False
         self._needs_raytrace = False
-        
+
         # simulation
         self._is_paused = False
 
@@ -93,7 +94,7 @@ class NewtonianSimulator:
         # setup
         solver_type = p.get("solver.type", "mujoco")
         self.solver_plugin = SOLVERS.get(solver_type)(p.subtree(f"solver.{solver_type}").as_kwargs())
-        scene = newton.ModelBuilder()
+        scene = newton.ModelBuilder(gravity=(0.0, 0.0, self.gravity))
         self.solver_plugin.builder_prepare(scene)
 
         # plugins

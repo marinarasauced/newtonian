@@ -41,7 +41,7 @@ class Robot:
         """
         p = self.p
 
-        builder = newton.ModelBuilder()
+        builder = newton.ModelBuilder(up_axis=scene.up_axis, gravity=scene.gravity)
         sim.solver_plugin.builder_prepare(builder)
         _configure(cfg=builder.default_joint_cfg, values=p.subtree("joint_cfg").as_kwargs(), what="joint_cfg")
         _configure(cfg=builder.default_shape_cfg, values=p.subtree("shape_cfg").as_kwargs(), what="shape_cfg")
