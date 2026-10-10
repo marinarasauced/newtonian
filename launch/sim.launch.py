@@ -1,8 +1,6 @@
 
 import os
 
-from typing_extensions import Any
-
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchContext, LaunchDescription
 from launch.actions import DeclareLaunchArgument, OpaqueFunction
@@ -20,7 +18,7 @@ def _node(context: LaunchContext) -> list:
         Node(
             package="newtonian",
             executable="sim",
-            name="newton",
+            name="newtonian",
             output="screen",
             parameters=[config],
         ),

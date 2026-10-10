@@ -7,28 +7,15 @@ import newton
 import numpy as np
 import warp as wp
 
+from newtonian.common import host, need
 from newtonian.modules.params import Parameters
-from newtonian.modules.registered.environments import ENVIRONMENTS, Environment
-from newtonian.modules.registered.input import INPUTS, Input
-from newtonian.modules.registered.robots import ROBOTS, Robot
+from newtonian.modules.register.environments import ENVIRONMENTS, Environment
+from newtonian.modules.register.inputs import INPUTS, Input
+from newtonian.modules.register.robots import ROBOTS, Robot
 # from newtonian.modules.registered.sensors import *
-from newtonian.modules.registered.solvers import SOLVERS
+from newtonian.modules.register.solvers import SOLVERS
 
 log = logging.getLogger("newtonian")
-
-
-def host(arr: wp.array | None) -> np.ndarray:
-    """
-    """
-    return need(arr).numpy()
-
-
-def need(arr: wp.array | None) -> wp.array:
-    """
-    """
-    if arr is None:
-        raise RuntimeError("Newton array is not allocated.")
-    return arr
 
 
 class Targets:

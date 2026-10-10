@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import newton
 
-from newtonian.modules.registered.solvers.base import SOLVERS, SolverPlugin
+from newtonian.modules.register.solvers.base import SOLVERS, SolverPlugin
 
 
 @SOLVERS.register("xpbd")

@@ -37,7 +37,7 @@ class Input:
     def on_model(self, sim) -> None:
         """
         """
-        pass
+        self.robot = sim.robots.resolve(name=self.robot_name)
 
     def on_timeout(self, sim) -> None:
         """
@@ -68,7 +68,7 @@ class Input:
             self.on_timeout(sim)
             return
         self.handle(sim, msg)
-        sim.robot(self.robot_name).engage(sim)
+        self.robot.engage(sim)
 
     def handle(self, sim, msg) -> None:
         """

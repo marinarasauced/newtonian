@@ -15,7 +15,7 @@ from rosgraph_msgs.msg import Clock
 from std_srvs.srv import SetBool, Trigger
 
 from newtonian.modules.params import Parameters
-from newtonian.modules.simulator import Simulator
+from newtonian.modules.physics.simulator import NewtonianSimulator
 
 
 def _qos(item) -> QoSProfile:
@@ -38,7 +38,7 @@ class NewtonNode(Node):
         """
         super().__init__("newtonian", allow_undeclared_parameters=True, automatically_declare_parameters_from_overrides=True)
 
-        self.sim: Simulator | None = None
+        self.sim: NewtonianSimulator | None = None
         self.publishers_: dict[str, Publisher] = {}
         self.subscriptions_: list[Subscription] = []
         self.clock_pub = self.create_publisher(msg_type=Clock, topic="/clock", qos_profile=10)
@@ -75,7 +75,7 @@ class NewtonNode(Node):
         self._teardown()
         params = self._params()
         t0 = time.perf_counter()
-        self.sim = Simulator(p=params)
+        self.sim = NewtonianSimulator(p=params)
 
         # for s in self.sim.sensors:
         #     self.publishers_[s.name] = self.create_publisher(s.msg_type, s.topic, _qos(s))
@@ -87,7 +87,7 @@ class NewtonNode(Node):
         period = self.sim.frame_dt / rtf if rtf > 0.0 else 0.0
         self.timer = self.create_timer(timer_period_sec=period, callback=self._on_timer)
 
-    def _stamp(self, sim: Simulator) -> Time:
+    def _stamp(self, sim: NewtonianSimulator) -> Time:
         """
         """
         t = sim.sim_time
@@ -139,7 +139,7 @@ class NewtonNode(Node):
         """
         """
         if self.sim is not None:
-            self.sim.pause(paused=bool(request.data))
+            self.sim.pause(is_paused=bool(request.data))
         response.success = self.sim is not None
         return response
 

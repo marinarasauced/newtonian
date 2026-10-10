@@ -10,9 +10,9 @@ import warp as wp
 from newtonian.modules.params import Parameters
 from newtonian.modules.paths import resolve
 from newtonian.modules.registry import Registry
-from newtonian.modules.registered.robots.utils.joints import apply_initial_joint_q
-from newtonian.modules.registered.robots.utils.drives import apply_drives
-from newtonian.modules.registered.robots.utils.common import shorthand
+from newtonian.modules.register.robots.utils.joints import apply_initial_joint_q
+from newtonian.modules.register.robots.utils.drives import apply_drives
+from newtonian.modules.register.robots.utils.common import shorthand
 from newtonian.modules.utils import convert_pose_to_transform
 
 
@@ -139,6 +139,21 @@ class Robot:
         """
         return self.root if not name else self.find_bodies(name)[0]
 
+
+class Robots(dict[str, Robot]):
+    """
+    """
+
+    def resolve(self, name: str | None) -> Robot:
+        """
+        """
+        if name:
+            if name not in self:
+                raise ValueError(f"unknown robot '{name}'")
+            return self[name]
+        if len(self) != 1:
+            raise ValueError(f"'robot' key is required when there are {len(self)} robots")
+        return next(iter(self.values()))
 
 def _configure(cfg, values: dict, what: str) -> None:
     """

@@ -4,7 +4,7 @@ from __future__ import annotations
 import newton
 
 from newtonian.modules.params import Parameters
-from newtonian.modules.registered.robots.utils.common import match
+from newtonian.modules.register.robots.utils.common import match
 
 
 DRIVE_MODES = {

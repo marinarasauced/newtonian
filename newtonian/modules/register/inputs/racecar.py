@@ -1,12 +1,17 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import math
 
 from geometry_msgs.msg import Twist
 
 from newtonian.modules.params import Parameters
-from newtonian.modules.registered.input.base import INPUTS, Input
+from newtonian.modules.register.inputs.base import INPUTS, Input
+
+if TYPE_CHECKING:
+    from newtonian.modules.physics.simulator import NewtonianSimulator
 
 
 @INPUTS.register("racecar")
@@ -37,13 +42,13 @@ class InputRacecar(Input):
             return v, 0.0
         return v, math.atan(self.L * msg.angular.z / v)
 
-    def on_model(self, sim) -> None:
-        info = sim.robot(self.robot_name)
+    def on_model(self, sim: NewtonianSimulator) -> None:
+        super().on_model(sim=sim)
         q_start = sim.model.joint_q_start.numpy()
         qd_start = sim.model.joint_qd_start.numpy()
 
         def joint(name):
-            return info.find_joints(name)[0]
+            return self.robot.find_joints(name)[0]
 
         steer = self.p.subtree("steer_joints").as_kwargs()
         wheels = self.p.subtree("wheel_joints").as_kwargs()
@@ -66,7 +71,7 @@ class InputRacecar(Input):
         delta = max(-self.max_steer, min(self.max_steer, delta))
         self._goal = (v, delta)
 
-    def _set(self, sim, v: float, delta: float) -> None:
+    def _set(self, sim: NewtonianSimulator, v: float, delta: float) -> None:
         L, half = self.L, self.T / 2.0
         angles: dict[str, float]
         speeds: dict[str, float]
@@ -84,10 +89,10 @@ class InputRacecar(Input):
                 "rear_right": w * (R + half),
             }
         for side, q in self.steer.items():
-            sim.targets.q[q] = angles[side]
+            sim.buffers.joint_target_q[q] = angles[side]
         for role, qd in self.wheels.items():
-            sim.targets.qd[qd] = speeds[role] / self.r
-        sim.targets.dirty = True
+            sim.buffers.joint_target_qd[qd] = speeds[role] / self.r
+        sim.buffers.dirty = True
 
     def reset(self) -> None:
         super().reset()
@@ -95,7 +100,7 @@ class InputRacecar(Input):
         self._delta = 0.0
         self._goal = (0.0, 0.0)
 
-    def apply(self, sim) -> None:
+    def apply(self, sim: NewtonianSimulator) -> None:
         super().apply(sim)
         v, delta = self._goal
         if v == self._v and delta == self._delta:

@@ -1,0 +1,293 @@
+
+from __future__ import annotations
+
+import logging
+
+import newton
+import numpy as np
+import warp as wp
+
+from newtonian.common import host, need
+from newtonian.modules.params import Parameters
+
+from newtonian.modules.physics.viewer import NewtonianViewer
+
+from newtonian.modules.register.environments import ENVIRONMENTS, Environment
+from newtonian.modules.register.inputs import INPUTS, Input
+from newtonian.modules.register.robots import ROBOTS, Robots
+from newtonian.modules.register.solvers import SOLVERS
+
+
+class NewtonianSimulatorBuffers:
+    """
+    Host copies of the joint targets and forces.
+    """
+
+    def __init__(self, control: newton.Control) -> None:
+        """
+        """
+        self.joint_target_q = host(arr=control.joint_target_q).copy()
+        self.joint_target_qd = host(arr=control.joint_target_qd).copy()
+        self.joint_f = host(arr=control.joint_f).copy()
+        self.dirty = False
+
+    def write(self, control: newton.Control) -> None:
+        """
+        Writes copies of the host arries into 'control' and clears 'dirty'.
+        """
+        need(arr=control.joint_target_q).assign(self.joint_target_q)
+        need(arr=control.joint_target_qd).assign(self.joint_target_qd)
+        need(arr=control.joint_f).assign(self.joint_f)
+        self.dirty = False
+
+
+class NewtonianSimulator:
+    """
+    """
+
+    def __init__(self, p: Parameters) -> None:
+        """
+        """
+        self.p = p
+
+        # 'sim' parameters subtree
+        s = p.subtree("sim")
+
+        # warp device
+        self.device = wp.get_device(s.get("device", None))
+
+        # viewer settings
+        self.substeps = int(s.get("substeps", 2))
+        self.frame_rate = float(s.get("frame_rate", 60.0))
+        self.frame_dt = 1.0 / self.frame_rate
+        self.sim_dt = self.frame_dt / self.substeps
+
+        self.viewer_type = s.get("viewer", "none")
+        self.use_cuda_graph = bool(s.get("cuda_graph", True))
+
+        # random number generator
+        self.rng = np.random.default_rng(int(s.get("seed", 0)))
+
+        # 
+        self.frame = 0
+        self.sim_time = 0.0
+        self.viewer: NewtonianViewer | None = None
+        self.graph = None
+        self.contacts = None
+        self.collision_pipeline = None
+
+        # 
+        self._needs_contacts = False
+        self._needs_raytrace = False
+        self._is_paused = False
+
+        # 
+        with wp.ScopedDevice(device=self.device):
+            self._build()
+
+    def _build(self) -> None:
+        """
+        Builds the model, solver, states, contacts, viewer, and CUDA graph.
+        """
+        p = self.p
+
+        solver_type = p.get("solver.type", "mujoco")
+        self.solver_plugin = SOLVERS.get(solver_type)(p.subtree(f"solver.{solver_type}").as_kwargs())
+
+        # 
+        scene = newton.ModelBuilder()
+        self.solver_plugin.builder_prepare(scene)
+
+        # 
+        self.environments: list[Environment] = [ENVIRONMENTS.get(q.get("type"))(n, q) for n, q in p.entries("environment")]
+        self.robots = Robots((n, ROBOTS.get(q.get("type"))(n, q)) for n, q in p.entries("robots"))
+        self.robot_names = list(self.robots)
+        self.inputs: list[Input] = [INPUTS.get(q.get("type"))(n, q) for n, q in p.entries("inputs")]
+        plugins = (*self.environments, *self.robots.values(), *self.inputs)
+
+        for item in plugins:
+            item.on_build(self, scene)
+        self.solver_plugin.builder_finalize(scene)
+        self.model = scene.finalize()
+        for item in plugins:
+            item.on_model(sim=self)
+
+        # 
+        if self._needs_contacts and not self.solver_plugin.reports_contact_forces:
+            raise ValueError(f"solver must report contact forces for contact sensors")
+
+        if not self.solver_plugin.supports_lazy_drives and any(len(r._lazy_dofs) for r in self.robots.values()):
+            raise ValueError(f"lazy drives are not supported by solver '{p.get('solver.type')}'")
+
+        # build solver
+        self.solver = self.solver_plugin.create(self.model)
+
+        # build states
+        self.state_0 = self.model.state()
+        self.state_1 = self.model.state()
+        self.control = self.model.control()
+        newton.eval_fk(model=self.model, joint_q=need(self.model.joint_q), joint_qd=need(self.model.joint_qd), state=self.state_0)
+
+        self.buffers = NewtonianSimulatorBuffers(control=self.control)
+        self._buffers_initial = (self.buffers.joint_target_q.copy(), self.buffers.joint_target_qd.copy(), self.buffers.joint_f.copy())
+        self._state_initial = self.model.state()
+        self._state_initial.assign(self.state_0)
+
+        # build contacts
+        if self.solver_plugin.uses_collision_pipeline:
+            self.collision_pipeline = newton.CollisionPipeline(self.model, **p.subtree("solver.collision_args").as_kwargs())
+            self.contacts = self.collision_pipeline.contacts()
+        elif self._needs_contacts:
+            self.contacts = newton.Contacts(rigid_contact_max=self.solver.get_max_contact_count(), soft_contact_max=0, requested_attributes=self.model.get_requested_contact_attributes())
+
+        # build custom viewer
+        if self.viewer_type == "gl":
+            self.viewer = NewtonianViewer(sim=self)
+        elif self.viewer_type != "none":
+            raise ValueError(f"viewer must be 'none' or 'gl'")
+
+        # builds CUDA graph
+        self._capture()
+
+    def _capture(self) -> None:
+        """
+        Captures one frame of '_simulate' as a CUDA graph when the device is CUDA and when 'use_cuda_graph' is true.
+        """
+        if not (self.use_cuda_graph and self.device.is_cuda):
+            return
+
+        # warm up '_simulate' before capture for graph.
+        self._simulate()
+
+        # capture '_simulate'.
+        with wp.ScopedCapture() as capture:
+            self._simulate()
+        self.graph = capture.graph
+
+        # restore simulator states to before warm up.
+        self._restore()
+
+    def _simulate(self) -> None:
+        """
+        Simulates the simulator's physics.
+        """
+        for i in range(self.substeps):
+
+            # apply forces
+            self.state_0.clear_forces()
+            if self.viewer is not None:
+                self.viewer.apply(state=self.state_0)
+
+            # collision
+            if self.collision_pipeline is not None and self.contacts is not None:
+                self.collision_pipeline.collide(state=self.state_0, contacts=self.contacts)
+
+            # step physics once
+            self.solver.step(state_in=self.state_0, state_out=self.state_1, control=self.control, contacts=self.contacts, dt=self.sim_dt)
+            if self.substeps % 2 and i == self.substeps - 1:
+                self.state_0.assign(other=self.state_1)
+            else:
+                self.state_0, self.state_1 = self.state_1, self.state_0
+
+            # update contacts through plugin
+            if self._needs_contacts and self.contacts is not None:
+                self.solver_plugin.update_contacts(self.solver, self.contacts, self.state_0)
+
+
+    def _restore(self) -> None:
+        """
+        Restores initial state into 'state_0' and 'state_1'.
+        """
+        for state in (self.state_0, self.state_1):
+            for name, arr in vars(state).items():
+                if isinstance(arr, wp.array) and getattr(self._state_initial, name, None) is None:
+                    setattr(self._state_initial, name, wp.zeros_like(arr))
+            state.assign(self._state_initial)
+
+    def close(self) -> None:
+        """
+        Closes the simulator's Newton GL viewer if 'viewer' exists.
+        """
+        if self.viewer is not None:
+            self.viewer.close()
+            self.viewer = None
+
+    def pause(self, is_paused: bool) -> None:
+        """
+        Pauses or unpauses stepping.
+        """
+        self._is_paused = is_paused
+        if self.viewer is not None:
+            self.viewer.is_paused = is_paused
+
+    def render(self) -> None:
+        """
+        Renders the current state in the simulator's Newton GL viewer.
+        """
+        if self.viewer is None:
+            return
+        self.viewer.render(time=self.sim_time, state=self.state_0, contacts=self.contacts)
+
+    def reset(self) -> None:
+        """
+        Resets the simulator to its initial states.
+        """
+        self._restore()
+        joint_target_q, joint_target_qd, joint_f = self._buffers_initial
+        self.buffers.joint_target_q[:] = joint_target_q
+        self.buffers.joint_target_qd[:] = joint_target_qd
+        self.buffers.joint_f[:] = joint_f
+        
+        # lazy plugins
+        for item in (*self.environments, *self.robots.values(), *self.inputs):
+            item.reset()
+        self.frame = 0.0
+        self.sim_time = 0.0
+
+    def require_contacts(self) -> None:
+        """
+        Called by contact sensors in 'on_model' to allocate contacts and compute forces.
+        """
+        self._needs_contacts = True
+
+    def require_raytrace(self) -> None:
+        """
+        Called by ray tracing sensor in 'on_model'.
+        """
+        self._needs_raytrace = True
+
+    @property
+    def state(self) -> newton.State:
+        """
+        Returns the current state.
+        """
+        return self.state_0
+
+    def stepable(self) -> bool:
+        """
+        Returns whether the simulator should step.
+        """
+        if self.viewer is not None:
+            return self.viewer.stepable()
+        return not self._is_paused
+
+    def step(self) -> None:
+        """
+        Steps the physics safely.
+        """
+        # apply inputs
+        for input in self.inputs:
+            input.apply(sim=self)
+
+        # write targets to device
+        if self.buffers.dirty:
+            self.buffers.write(control=self.control)
+
+        # launch graph
+        with wp.ScopedDevice(device=self.device):
+            if self.graph is not None:
+                wp.capture_launch(graph=self.graph)
+            else:
+                self._simulate()
+        self.frame += 1
+        self.sim_time += self.frame_dt
