@@ -237,11 +237,12 @@ class NewtonianSimulator:
         self.buffers.joint_target_q[:] = joint_target_q
         self.buffers.joint_target_qd[:] = joint_target_qd
         self.buffers.joint_f[:] = joint_f
+        self.buffers.write(control=self.control)
         
         # lazy plugins
         for item in (*self.environments, *self.robots.values(), *self.inputs):
             item.reset()
-        self.frame = 0.0
+        self.frame = 0
         self.sim_time = 0.0
 
     def require_contacts(self) -> None:
