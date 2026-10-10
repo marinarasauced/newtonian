@@ -70,8 +70,17 @@ class NewtonNode(Node):
     def _rebuild(self) -> None:
         """
         """
-        params = self._params()
-        sim = NewtonianSimulator(p=params)
+        p = self._params()
+        old = self.sim
+        viewer = old.viewer if old is not None else None
+        try:
+            sim = NewtonianSimulator(p=p, viewer=viewer)
+        except Exception as e:
+            if old is not None and viewer is not None and viewer.sim is not old:
+                viewer.attach(sim=old)
+            raise
+        if old is not None and sim.viewer is viewer:
+            old.viewer = None
         self._teardown()
         self.sim = sim
 
@@ -81,7 +90,7 @@ class NewtonNode(Node):
         for i in self.sim.inputs:
             self.subscriptions_.append(self.create_subscription(i.msg_type, i.topic, i.callback, _qos(i)))
 
-        rtf = float(params.get("sim.real_time_factor", 1.0))
+        rtf = float(p.get("sim.real_time_factor", 1.0))
         period = self.sim.frame_dt / rtf if rtf > 0.0 else 0.0
         self.timer = self.create_timer(timer_period_sec=period, callback=self._on_timer)
 

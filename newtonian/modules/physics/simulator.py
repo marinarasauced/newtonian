@@ -45,7 +45,7 @@ class NewtonianSimulator:
     """
     """
 
-    def __init__(self, p: Parameters) -> None:
+    def __init__(self, p: Parameters, viewer: NewtonianViewer | None = None) -> None:
         """
         """
         self.p = p
@@ -82,9 +82,9 @@ class NewtonianSimulator:
 
         # 
         with wp.ScopedDevice(device=self.device):
-            self._build()
+            self._build(viewer=viewer)
 
-    def _build(self) -> None:
+    def _build(self, viewer: NewtonianViewer | None) -> None:
         """
         Builds the model, solver, states, contacts, viewer, and CUDA graph.
         """
@@ -141,7 +141,7 @@ class NewtonianSimulator:
 
         # build custom viewer
         if self.viewer_type == "gl":
-            self.viewer = NewtonianViewer(sim=self)
+            self.viewer = viewer.attach(sim=self) if viewer is not None else NewtonianViewer(sim=self)
         elif self.viewer_type != "none":
             raise ValueError(f"viewer must be 'none' or 'gl'")
 

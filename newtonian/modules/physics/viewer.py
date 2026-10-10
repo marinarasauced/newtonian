@@ -16,10 +16,19 @@ class NewtonianViewer:
     def __init__(self, sim: NewtonianSimulator) -> None:
         """
         """
-        self.sim = sim
         self.gl = newton.viewer.ViewerGL()
-        self.gl.set_model(sim.model)
         self._ui_setup()
+        self.attach(sim=sim)
+
+    def attach(self, sim: NewtonianSimulator) -> NewtonianViewer:
+        """
+        """
+        self.sim = sim
+        self.gl.set_model(model=sim.model)
+        # register custom ui elements upon model changes
+        if self.gl.gui is not None:
+            self.gl.register_ui_callback(callback=self._ui_control, position="free")
+        return self
 
     @property
     def is_paused(self) -> bool:
@@ -76,7 +85,6 @@ class NewtonianViewer:
         self._ui_stats = (0.0, 0.0)
         viewer.gui._render_left_panel = lambda: None
         viewer.register_ui_callback(callback=self._ui_measure, position="stats")
-        viewer.register_ui_callback(callback=self._ui_control, position="free")
 
     def _ui_measure(self, imgui) -> None:
         """
