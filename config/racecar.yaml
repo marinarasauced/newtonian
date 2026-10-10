@@ -1,4 +1,4 @@
-newton:
+newtonian:
 
   ros__parameters:
 
@@ -43,7 +43,7 @@ newton:
       rc:                               # name of input (in case of multiple)
         type: "racecar"
         msg: "twist"
-        angular: "yaw_rate"
+        topic: "/racecar/control"
         wheelbase: 0.33
         track: 0.24
         wheel_radius: 0.05

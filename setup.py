@@ -38,7 +38,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'sim = src.node:main',
+            'sim = newtonian.node:main',
         ],
     },
 )
