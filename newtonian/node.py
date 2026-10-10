@@ -1,8 +1,6 @@
 
 from __future__ import annotations
 
-import time
-
 import rclpy
 import rclpy.executors
 from rclpy.node import Node
@@ -72,10 +70,10 @@ class NewtonNode(Node):
     def _rebuild(self) -> None:
         """
         """
-        self._teardown()
         params = self._params()
-        t0 = time.perf_counter()
-        self.sim = NewtonianSimulator(p=params)
+        sim = NewtonianSimulator(p=params)
+        self._teardown()
+        self.sim = sim
 
         # for s in self.sim.sensors:
         #     self.publishers_[s.name] = self.create_publisher(s.msg_type, s.topic, _qos(s))
