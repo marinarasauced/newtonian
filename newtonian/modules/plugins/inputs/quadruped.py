@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING
 
 from sensor_msgs.msg import JointState
 
-from newtonian.common import host
-from newtonian.modules.register.inputs.base import INPUTS, Input
+from newtonian.modules.arrays import host
+from newtonian.modules.plugins.inputs.base import INPUTS, Input
 
 if TYPE_CHECKING:
     from newtonian.modules.physics.simulator import NewtonianSimulator

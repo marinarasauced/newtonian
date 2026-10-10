@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import newton
 
-from newtonian.modules.register.robots.base import ROBOTS, Robot
+from newtonian.modules.plugins.robots.base import ROBOTS, Robot
 
 
 @ROBOTS.register("mjcf")

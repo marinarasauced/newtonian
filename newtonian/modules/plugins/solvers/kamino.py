@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import newton
 
-from newtonian.modules.register.solvers.base import SOLVERS, SolverPlugin
+from newtonian.modules.plugins.solvers.base import SOLVERS, SolverPlugin
 
 
 @SOLVERS.register("kamino")

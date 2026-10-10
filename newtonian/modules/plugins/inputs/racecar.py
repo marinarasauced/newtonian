@@ -7,9 +7,9 @@ import math
 
 from geometry_msgs.msg import Twist
 
-from newtonian.common import host
+from newtonian.modules.arrays import host
 from newtonian.modules.params import Parameters
-from newtonian.modules.register.inputs.base import INPUTS, Input
+from newtonian.modules.plugins.inputs.base import INPUTS, Input
 
 if TYPE_CHECKING:
     from newtonian.modules.physics.simulator import NewtonianSimulator

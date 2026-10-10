@@ -5,15 +5,15 @@ import newton
 import numpy as np
 import warp as wp
 
-from newtonian.common import host, need
+from newtonian.modules.arrays import host, need
 from newtonian.modules.params import Parameters
 
 from newtonian.modules.physics.viewer import NewtonianViewer
 
-from newtonian.modules.register.environments import ENVIRONMENTS, Environment
-from newtonian.modules.register.inputs import INPUTS, Input
-from newtonian.modules.register.robots import ROBOTS, Robot, Robots
-from newtonian.modules.register.solvers import SOLVERS
+from newtonian.modules.plugins.environments import ENVIRONMENTS, Environment
+from newtonian.modules.plugins.inputs import INPUTS, Input
+from newtonian.modules.plugins.robots import ROBOTS, Robot, Robots
+from newtonian.modules.plugins.solvers import SOLVERS
 
 
 class NewtonianSimulatorBuffers:

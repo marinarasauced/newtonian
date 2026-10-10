@@ -10,10 +10,10 @@ import warp as wp
 from newtonian.modules.params import Parameters
 from newtonian.modules.paths import resolve
 from newtonian.modules.registry import Registry
-from newtonian.modules.register.robots.utils.joints import apply_initial_joint_q
-from newtonian.modules.register.robots.utils.drives import apply_drives
-from newtonian.modules.register.robots.utils.common import shorthand
-from newtonian.modules.utils import convert_pose_to_transform
+from newtonian.modules.plugins.robots.joints import apply_initial_joint_q
+from newtonian.modules.plugins.robots.drives import apply_drives
+from newtonian.modules.plugins.robots.match import shorthand
+from newtonian.modules.transforms import convert_pose_to_transform
 
 
 ROBOTS: Registry = Registry("robot")
