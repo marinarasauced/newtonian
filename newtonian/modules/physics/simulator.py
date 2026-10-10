@@ -188,9 +188,9 @@ class NewtonianSimulator:
             else:
                 self.state_0, self.state_1 = self.state_1, self.state_0
 
-            # update contacts through plugin
-            if self._needs_contacts and self.contacts is not None:
-                self.solver_plugin.update_contacts(self.solver, self.contacts, self.state_0)
+        # update contacts through plugin
+        if self._needs_contacts and self.contacts is not None:
+            self.solver_plugin.update_contacts(self.solver, self.contacts, self.state_0)
 
 
     def _restore(self) -> None:
