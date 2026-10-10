@@ -1,8 +1,6 @@
 
 from __future__ import annotations
 
-import logging
-
 import newton
 import numpy as np
 import warp as wp
@@ -33,7 +31,7 @@ class NewtonianSimulatorBuffers:
 
     def write(self, control: newton.Control) -> None:
         """
-        Writes copies of the host arries into 'control' and clears 'dirty'.
+        Writes copies of the host arrays into 'control' and clears 'dirty'.
         """
         need(arr=control.joint_target_q).assign(self.joint_target_q)
         need(arr=control.joint_target_qd).assign(self.joint_target_qd)
@@ -56,7 +54,7 @@ class NewtonianSimulator:
         # warp device
         self.device = wp.get_device(s.get("device", None))
 
-        # viewer settings
+        # timing
         self.substeps = int(s.get("substeps", 2))
         self.frame_rate = float(s.get("frame_rate", 60.0))
         self.frame_dt = 1.0 / self.frame_rate
@@ -68,19 +66,21 @@ class NewtonianSimulator:
         # random number generator
         self.rng = np.random.default_rng(int(s.get("seed", 0)))
 
-        # 
+        # build
         self.frame = 0
         self.viewer: NewtonianViewer | None = None
         self.graph = None
         self.contacts = None
         self.collision_pipeline = None
 
-        # 
+        # sensors
         self._needs_contacts = False
         self._needs_raytrace = False
+        
+        # simulation
         self._is_paused = False
 
-        # 
+        # graph capture
         with wp.ScopedDevice(device=self.device):
             self._build(viewer=viewer)
 
@@ -90,17 +90,15 @@ class NewtonianSimulator:
         """
         p = self.p
 
+        # setup
         solver_type = p.get("solver.type", "mujoco")
         self.solver_plugin = SOLVERS.get(solver_type)(p.subtree(f"solver.{solver_type}").as_kwargs())
-
-        # 
         scene = newton.ModelBuilder()
         self.solver_plugin.builder_prepare(scene)
 
-        # 
+        # plugins
         self.environments: list[Environment] = [ENVIRONMENTS.get(q.get("type"))(n, q) for n, q in p.entries("environment")]
         self.robots = Robots((n, ROBOTS.get(q.get("type"))(n, q)) for n, q in p.entries("robots"))
-        self.robot_names = list(self.robots)
         self.inputs: list[Input] = [INPUTS.get(q.get("type"))(n, q) for n, q in p.entries("inputs")]
         plugins = (*self.environments, *self.robots.values(), *self.inputs)
 
@@ -111,7 +109,7 @@ class NewtonianSimulator:
         for item in plugins:
             item.on_model(sim=self)
 
-        # 
+        # validation of solvers
         if self._needs_contacts and not self.solver_plugin.reports_contact_forces:
             raise ValueError(f"solver must report contact forces for contact sensors")
 
@@ -191,7 +189,6 @@ class NewtonianSimulator:
         # update contacts through plugin
         if self._needs_contacts and self.contacts is not None:
             self.solver_plugin.update_contacts(self.solver, self.contacts, self.state_0)
-
 
     def _restore(self) -> None:
         """
