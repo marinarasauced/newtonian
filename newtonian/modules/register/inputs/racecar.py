@@ -7,6 +7,7 @@ import math
 
 from geometry_msgs.msg import Twist
 
+from newtonian.common import host
 from newtonian.modules.params import Parameters
 from newtonian.modules.register.inputs.base import INPUTS, Input
 
@@ -44,8 +45,8 @@ class InputRacecar(Input):
 
     def on_model(self, sim: NewtonianSimulator) -> None:
         super().on_model(sim=sim)
-        q_start = sim.model.joint_q_start.numpy()
-        qd_start = sim.model.joint_qd_start.numpy()
+        q_start = host(arr=sim.model.joint_q_start)
+        qd_start = host(arr=sim.model.joint_qd_start)
 
         def joint(name):
             return self.robot.find_joints(name)[0]

@@ -14,7 +14,6 @@ class SolverPlugin:
     Plugin for building and using one Newton solver type.
     """
     solver_cls: type
-    reports_contact_forces = False
     supports_lazy_drives = True
 
     def __init__(self, args: dict) -> None:
@@ -34,6 +33,14 @@ class SolverPlugin:
 
     def create(self, model: newton.Model) -> newton.solvers.SolverBase:
         return self.solver_cls(model, **self.args)
+
+    @property
+    def reports_contact_forces(self) -> bool:
+        """
+        True if the solver can give contact forces.
+        False otherwise.
+        """
+        return False
 
     @property
     def uses_collision_pipeline(self) -> bool:

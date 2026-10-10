@@ -12,7 +12,7 @@ from newtonian.modules.physics.viewer import NewtonianViewer
 
 from newtonian.modules.register.environments import ENVIRONMENTS, Environment
 from newtonian.modules.register.inputs import INPUTS, Input
-from newtonian.modules.register.robots import ROBOTS, Robots
+from newtonian.modules.register.robots import ROBOTS, Robot, Robots
 from newtonian.modules.register.solvers import SOLVERS
 
 
@@ -69,10 +69,10 @@ class NewtonianSimulator:
 
         # build
         self.frame = 0
+        self.graph: wp.Graph | None = None
         self.viewer: NewtonianViewer | None = None
-        self.graph = None
-        self.contacts = None
-        self.collision_pipeline = None
+        self.contacts: newton.Contacts | None = None
+        self.collision_pipeline: newton.CollisionPipeline | None = None
 
         # sensors
         self._needs_contacts = False
@@ -107,7 +107,7 @@ class NewtonianSimulator:
 
         # plugins (inputs)
         self.inputs: list[Input] = [INPUTS.get(q.get("type"))(n, q) for n, q in p.entries("inputs")]
-        plugins = (*self.environments, *self.robots.values(), *self.inputs)
+        plugins: tuple[Environment | Robot | Input, ...] = (*self.environments, *self.robots.values(), *self.inputs)
 
         # plugins
         for item in plugins:
@@ -244,7 +244,8 @@ class NewtonianSimulator:
         self.buffers.write(control=self.control)
 
         # lazy plugins
-        for item in (*self.environments, *self.robots.values(), *self.inputs):
+        items: tuple[Environment | Robot | Input, ...] = (*self.environments, *self.robots.values(), *self.inputs)
+        for item in items:
             item.reset()
         self.frame = 0
 

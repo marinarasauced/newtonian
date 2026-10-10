@@ -20,10 +20,9 @@ class SolverKaminoPlugin(SolverPlugin):
         return self.solver_cls(model, config=self.solver_cls.Config.from_model(model, **args))
 
     @property
-    def uses_collision_pipeline(self) -> bool:
-        return not self.args.get("use_collision_detector", False)
-
-    @property
     def reports_contact_forces(self) -> bool:
         return self.uses_collision_pipeline
 
+    @property
+    def uses_collision_pipeline(self) -> bool:
+        return not self.args.get("use_collision_detector", False)

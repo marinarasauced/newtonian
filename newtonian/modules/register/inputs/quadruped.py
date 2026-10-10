@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 from sensor_msgs.msg import JointState
 
+from newtonian.common import host
 from newtonian.modules.register.inputs.base import INPUTS, Input
 
 if TYPE_CHECKING:
@@ -17,8 +18,8 @@ class InputQuadruped(Input):
 
     def on_model(self, sim: NewtonianSimulator) -> None:
         super().on_model(sim=sim)
-        q_start = sim.model.joint_q_start.numpy()
-        qd_start = sim.model.joint_qd_start.numpy()
+        q_start = host(arr=sim.model.joint_q_start)
+        qd_start = host(arr=sim.model.joint_qd_start)
         self.index = {name: (int(q_start[j]), int(qd_start[j])) for j, name in self.robot.joints.items()}
 
     def handle(self, sim: NewtonianSimulator, msg) -> None:

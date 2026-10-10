@@ -151,7 +151,6 @@ def _estimate_contact_forces(
 @SOLVERS.register("featherstone")
 class SolverFeatherstonePlugin(SolverPlugin):
     solver_cls = newton.solvers.SolverFeatherstone
-    reports_contact_forces = True
 
     def update_contacts(self, solver, contacts: newton.Contacts, state: newton.State) -> None:
             if contacts.force is None or not contacts.rigid_contact_max:
@@ -188,3 +187,7 @@ class SolverFeatherstonePlugin(SolverPlugin):
                 ],
                 device=model.device,
             )
+
+    @property
+    def reports_contact_forces(self) -> bool:
+        return True

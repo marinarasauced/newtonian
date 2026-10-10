@@ -83,7 +83,7 @@ class NewtonianViewer:
         if viewer.gui is None:
             return
         self._ui_stats = (0.0, 0.0)
-        viewer.gui._render_left_panel = lambda: None
+        viewer.gui._render_left_panel = lambda: None    # type: ignore[method-assign]
         viewer.register_ui_callback(callback=self._ui_measure, position="stats")
 
     def _ui_measure(self, imgui) -> None:
