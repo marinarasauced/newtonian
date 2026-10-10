@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import newton
 
-from src.modules.registered.environments.base import ENVIRONMENTS, Environment
+from newtonian.modules.registered.environments.base import ENVIRONMENTS, Environment
 
 
 @ENVIRONMENTS.register("empty")

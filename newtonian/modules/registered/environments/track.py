@@ -9,8 +9,8 @@ import warp as wp
 
 import yaml
 
-from src.modules.paths import resolve
-from src.modules.registered.environments.base import ENVIRONMENTS, Environment
+from newtonian.modules.paths import resolve
+from newtonian.modules.registered.environments.base import ENVIRONMENTS, Environment
 
 
 @ENVIRONMENTS.register("track")

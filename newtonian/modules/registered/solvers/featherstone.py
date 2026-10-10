@@ -11,7 +11,7 @@ from __future__ import annotations
 import newton
 import warp as wp
 
-from src.modules.registered.solvers.base import SOLVERS, SolverPlugin
+from newtonian.modules.registered.solvers.base import SOLVERS, SolverPlugin
 
 
 @wp.kernel

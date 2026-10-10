@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import newton
 
-from src.modules.registry import Registry
+from newtonian.modules.registry import Registry
 
 
 SOLVERS: Registry = Registry("solver")

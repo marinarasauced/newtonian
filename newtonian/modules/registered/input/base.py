@@ -3,8 +3,8 @@ from __future__ import annotations
 
 import newton
 
-from src.modules.params import Parameters
-from src.modules.registry import Registry
+from newtonian.modules.params import Parameters
+from newtonian.modules.registry import Registry
 
 
 INPUTS: Registry = Registry("input")

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from sensor_msgs.msg import JointState
 
-from src.modules.registered.input.base import INPUTS, Input
+from newtonian.modules.registered.input.base import INPUTS, Input
 
 
 @INPUTS.register("quadruped")

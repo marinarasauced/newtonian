@@ -7,13 +7,13 @@ import newton
 import numpy as np
 import warp as wp
 
-from src.modules.params import Parameters
-from src.modules.paths import resolve
-from src.modules.registry import Registry
-from src.modules.registered.robots.utils.joints import apply_initial_joint_q
-from src.modules.registered.robots.utils.drives import apply_drives
-from src.modules.registered.robots.utils.common import shorthand
-from src.modules.utils import convert_pose_to_transform
+from newtonian.modules.params import Parameters
+from newtonian.modules.paths import resolve
+from newtonian.modules.registry import Registry
+from newtonian.modules.registered.robots.utils.joints import apply_initial_joint_q
+from newtonian.modules.registered.robots.utils.drives import apply_drives
+from newtonian.modules.registered.robots.utils.common import shorthand
+from newtonian.modules.utils import convert_pose_to_transform
 
 
 ROBOTS: Registry = Registry("robot")

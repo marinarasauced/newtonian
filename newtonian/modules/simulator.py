@@ -7,12 +7,12 @@ import newton
 import numpy as np
 import warp as wp
 
-from src.modules.params import Parameters
-from src.modules.registered.environments import ENVIRONMENTS, Environment
-from src.modules.registered.input import INPUTS, Input
-from src.modules.registered.robots import ROBOTS, Robot
-# from src.modules.registered.sensors import *
-from src.modules.registered.solvers import SOLVERS
+from newtonian.modules.params import Parameters
+from newtonian.modules.registered.environments import ENVIRONMENTS, Environment
+from newtonian.modules.registered.input import INPUTS, Input
+from newtonian.modules.registered.robots import ROBOTS, Robot
+# from newtonian.modules.registered.sensors import *
+from newtonian.modules.registered.solvers import SOLVERS
 
 log = logging.getLogger("newtonian")
 

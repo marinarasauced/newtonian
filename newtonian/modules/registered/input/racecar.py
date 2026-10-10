@@ -5,8 +5,8 @@ import math
 
 from geometry_msgs.msg import Twist
 
-from src.modules.params import Parameters
-from src.modules.registered.input.base import INPUTS, Input
+from newtonian.modules.params import Parameters
+from newtonian.modules.registered.input.base import INPUTS, Input
 
 
 @INPUTS.register("racecar")

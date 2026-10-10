@@ -14,8 +14,8 @@ from builtin_interfaces.msg import Time
 from rosgraph_msgs.msg import Clock
 from std_srvs.srv import SetBool, Trigger
 
-from src.modules.params import Parameters
-from src.modules.simulator import Simulator
+from newtonian.modules.params import Parameters
+from newtonian.modules.simulator import Simulator
 
 
 def _qos(item) -> QoSProfile:

@@ -3,8 +3,8 @@ from __future__ import annotations
 
 import newton
 
-from src.modules.params import Parameters
-from src.modules.registered.robots.utils.common import match
+from newtonian.modules.params import Parameters
+from newtonian.modules.registered.robots.utils.common import match
 
 
 DRIVE_MODES = {
