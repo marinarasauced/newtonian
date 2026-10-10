@@ -97,12 +97,19 @@ class NewtonianSimulator:
         scene = newton.ModelBuilder(gravity=(0.0, 0.0, self.gravity))
         self.solver_plugin.builder_prepare(scene)
 
-        # plugins
+        # plugins (environments)
         self.environments: list[Environment] = [ENVIRONMENTS.get(q.get("type"))(n, q) for n, q in p.entries("environment")]
+
+        # plugins (robots)
         self.robots = Robots((n, ROBOTS.get(q.get("type"))(n, q)) for n, q in p.entries("robots"))
+        if len(self.robots) > 1:
+            raise ValueError(f"{len(self.robots)} robots configured exceeds current supported limit of one robot per sim")
+
+        # plugins (inputs)
         self.inputs: list[Input] = [INPUTS.get(q.get("type"))(n, q) for n, q in p.entries("inputs")]
         plugins = (*self.environments, *self.robots.values(), *self.inputs)
 
+        # plugins
         for item in plugins:
             item.on_build(self, scene)
         self.solver_plugin.builder_finalize(scene)

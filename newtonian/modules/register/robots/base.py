@@ -142,18 +142,25 @@ class Robot:
 
 class Robots(dict[str, Robot]):
     """
+    Robots of a scene as a normal dict where the robot's name keys its instance.
+    An additional function 'resolve' finds the robot that a plugin's 'robot' key refers to.
     """
 
-    def resolve(self, name: str | None) -> Robot:
+    def resolve(self, name: str | None, caller: str) -> Robot:
         """
+        Returns the robot object that a plugin's 'robot' key refers to.
+        The 'caller' argument refers to the plugin asking to resolve.
         """
         if name:
             if name not in self:
-                raise ValueError(f"unknown robot '{name}'")
+                raise ValueError(f"{caller} : unknown robot '{name}' w.r.t. expected {sorted(self)}")
             return self[name]
-        if len(self) != 1:
-            raise ValueError(f"'robot' key is required when there are {len(self)} robots")
+        if not self:
+            raise ValueError(f"{caller} : the scene has no robot")
+        if len(self) > 1:
+            raise ValueError(f"{caller} : set 'robot' to one of {sorted(self)}")
         return next(iter(self.values()))
+
 
 def _configure(cfg, values: dict, what: str) -> None:
     """

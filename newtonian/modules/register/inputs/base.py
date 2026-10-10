@@ -37,7 +37,7 @@ class Input:
     def on_model(self, sim) -> None:
         """
         """
-        self.robot = sim.robots.resolve(name=self.robot_name)
+        self.robot = sim.robots.resolve(name=self.robot_name, caller=f"input '{self.name}'")
 
     def on_timeout(self, sim) -> None:
         """
