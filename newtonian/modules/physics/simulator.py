@@ -70,7 +70,6 @@ class NewtonianSimulator:
 
         # 
         self.frame = 0
-        self.sim_time = 0.0
         self.viewer: NewtonianViewer | None = None
         self.graph = None
         self.contacts = None
@@ -238,12 +237,11 @@ class NewtonianSimulator:
         self.buffers.joint_target_qd[:] = joint_target_qd
         self.buffers.joint_f[:] = joint_f
         self.buffers.write(control=self.control)
-        
+
         # lazy plugins
         for item in (*self.environments, *self.robots.values(), *self.inputs):
             item.reset()
         self.frame = 0
-        self.sim_time = 0.0
 
     def require_contacts(self) -> None:
         """
@@ -256,6 +254,13 @@ class NewtonianSimulator:
         Called by ray tracing sensor in 'on_model'.
         """
         self._needs_raytrace = True
+
+    @property
+    def sim_time(self) -> float:
+        """
+        Returns the current time.
+        """
+        return self.frame * self.frame_dt
 
     @property
     def state(self) -> newton.State:
@@ -291,4 +296,3 @@ class NewtonianSimulator:
             else:
                 self._simulate()
         self.frame += 1
-        self.sim_time += self.frame_dt

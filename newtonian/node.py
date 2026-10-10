@@ -90,10 +90,8 @@ class NewtonNode(Node):
     def _stamp(self, sim: NewtonianSimulator) -> Time:
         """
         """
-        t = sim.sim_time
-        s = int(t)
-        ns = round((t - s) * 1.0e+9)
-        return Time(sec=s, nanosec=ns)
+        ns = round(sim.frame * 1.0e+9 / sim.frame_rate)
+        return Time(sec=ns//1_000_000_000, nanosec=ns%1_000_000_000)
 
     def _on_timer(self) -> None:
         """
