@@ -90,7 +90,7 @@ class NewtonNode(Node):
         for i in self.sim.inputs:
             self.subscriptions_.append(self.create_subscription(i.msg_type, i.topic, i.callback, _qos(i)))
 
-        rtf = float(p.get("sim.real_time_factor", 1.0))
+        rtf = p.get_float(key="sim.real_time_factor", default=1.0, above=0.0)
         period = self.sim.frame_dt / rtf if rtf > 0.0 else 0.0
         self.timer = self.create_timer(timer_period_sec=period, callback=self._on_timer)
 

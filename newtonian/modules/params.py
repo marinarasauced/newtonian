@@ -1,9 +1,12 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
+
 import yaml
+
 
 _MISSING = object()
 
@@ -19,6 +22,11 @@ def flatten(tree: dict, prefix: str = "") -> dict[str, Any]:
         else:
             out[name] = value
     return out
+
+
+class ParameterError(ValueError):
+    """
+    """
 
 
 class Parameters:
@@ -59,6 +67,14 @@ class Parameters:
                 seen.setdefault(key.split(".", 1)[0], None)
         return list(seen)
 
+    def check_keys(self, allowed: Iterable[str]) -> None:
+        """
+        """
+        allowed = set(allowed)
+        unknown = sorted({key.split(".", 1)[0] for key in self._flat} - allowed)
+        if unknown:
+            raise ParameterError(f"{self.prefix}{unknown[0]} encountered unknown key after expecting one of {sorted(allowed)}")
+
     def entries(self, group: str, key: str = "type") -> list[tuple[str, Parameters]]:
         """
         """
@@ -78,6 +94,43 @@ class Parameters:
             raise KeyError(f"missing required parameter '{where}'")
         if isinstance(value, tuple):
             value = list(value)
+        return value
+
+    def get_int(self, key: str, default: Any = _MISSING, at_least: int | None = None) -> int:
+        """
+        """
+        value = self.get(key=key, default=default)
+        if isinstance(value, bool) or not isinstance(value, (int, float)) or value != int(value):
+            raise ParameterError(f"{self.prefix}{key} expected an integer but got {value!r}")
+        if at_least is not None and value < at_least:
+            raise ParameterError(f"{self.prefix}{key} exepceted a value at least {at_least} but got {value!r}")
+        return int(value)
+
+    def get_float(self, key: str, default: Any = _MISSING, above: float | None = None) -> float:
+        """
+        """
+        value = self.get(key=key, default=default)
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            raise ParameterError(f"{self.prefix}{key} expected a number but got {value!r}")
+        if above is not None and not value > above:
+            raise ParameterError(f"{self.prefix}{key} exepceted a value above {above} but got {value!r}")
+        return float(value)
+
+    def get_choice(self, key: str, choices: Iterable[str], default: Any = _MISSING) -> str:
+        """
+        """
+        value = self.get(key=key, default=default)
+        choices = tuple(choices)
+        if value not in choices:
+            raise ParameterError(f"{self.prefix}{key} expected one of {list(choices)} but got {value!r}")
+        return value
+
+    def get_bool(self, key: str, default: Any = _MISSING) -> bool:
+        """
+        """
+        value = self.get(key=key, default=default)
+        if not isinstance(value, bool):
+            raise ParameterError(f"{self.prefix}{key} exepceted true or false but got {value!r}")
         return value
 
     def subtree(self, key: str) -> Parameters:

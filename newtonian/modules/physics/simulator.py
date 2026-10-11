@@ -55,17 +55,17 @@ class NewtonianSimulator:
         self.device = wp.get_device(s.get("device", None))
 
         # timing
-        self.substeps = int(s.get("substeps", 2))
-        self.frame_rate = float(s.get("frame_rate", 60.0))
+        self.substeps = s.get_int(key="substeps", default=2, at_least=1)
+        self.frame_rate = s.get_float(key="frame_rate", default=60.0, above=0.0)
         self.frame_dt = 1.0 / self.frame_rate
         self.sim_dt = self.frame_dt / self.substeps
 
-        self.gravity = float(s.get("gravity", -9.81))
-        self.viewer_type = s.get("viewer", "none")
-        self.use_cuda_graph = bool(s.get("cuda_graph", True))
+        self.gravity = s.get_float(key="gravity", default=-9.81)
+        self.viewer_type = s.get_choice(key="viewer", choices=("none", "gl"), default="none")
+        self.use_cuda_graph = s.get_bool(key="cuda_graph", default=True)
 
         # random number generator
-        self.rng = np.random.default_rng(int(s.get("seed", 0)))
+        self.rng = np.random.default_rng(s.get_int(key="seed", default=42))
 
         # build
         self.frame = 0
