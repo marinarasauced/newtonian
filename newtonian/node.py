@@ -84,8 +84,8 @@ class NewtonNode(Node):
         self._teardown()
         self.sim = sim
 
-        # for s in self.sim.sensors:
-        #     self.publishers_[s.name] = self.create_publisher(s.msg_type, s.topic, _qos(s))
+        for s in self.sim.sensors:
+            self.publishers_[s.name] = self.create_publisher(s.msg_type, s.topic, _qos(s))
 
         for i in self.sim.inputs:
             self.subscriptions_.append(self.create_subscription(i.msg_type, i.topic, i.callback, _qos(i)))
@@ -112,9 +112,10 @@ class NewtonNode(Node):
             return
         if sim.stepable():
             sim.step()
+            stamp = self._stamp(sim=sim)
             self.clock_pub.publish(Clock(clock=self._stamp(sim=sim)))
-            # for s in sim.sense():
-            #     self.publishers_[s.name].publish(s.to_msg(stamp))
+            for s in sim.sense():
+                self.publishers_[s.name].publish(s.to_msg(stamp=stamp))
         sim.render()
 
     def _on_reset(self, request: Trigger.Request, response: Trigger.Response) -> Trigger.Response:

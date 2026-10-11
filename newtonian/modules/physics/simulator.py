@@ -13,6 +13,7 @@ from newtonian.modules.physics.viewer import NewtonianViewer
 from newtonian.modules.plugins.environments import ENVIRONMENTS, Environment
 from newtonian.modules.plugins.inputs import INPUTS, Input
 from newtonian.modules.plugins.robots import ROBOTS, Robot, Robots
+from newtonian.modules.plugins.sensors import SENSORS, Sensor, update_sensors
 from newtonian.modules.plugins.solvers import SOLVERS
 
 
@@ -107,9 +108,12 @@ class NewtonianSimulator:
 
         # plugins (inputs)
         self.inputs: list[Input] = [INPUTS.get(q.get("type"))(n, q) for n, q in p.entries("inputs")]
-        plugins: tuple[Environment | Robot | Input, ...] = (*self.environments, *self.robots.values(), *self.inputs)
+
+        # plugins (sensors)
+        self.sensors: list[Sensor] = [SENSORS.get(q.get("type"))(n, q) for n, q in p.entries("sensors")]
 
         # plugins
+        plugins: tuple[Environment | Robot | Input | Sensor, ...] = (*self.environments, *self.robots.values(), *self.inputs, *self.sensors)
         for item in plugins:
             item.on_build(self, scene)
         self.solver_plugin.builder_finalize(scene)
@@ -255,7 +259,7 @@ class NewtonianSimulator:
         self.buffers.write(control=self.control)
 
         # lazy plugins
-        items: tuple[Environment | Robot | Input, ...] = (*self.environments, *self.robots.values(), *self.inputs)
+        items: tuple[Environment | Robot | Input | Sensor, ...] = (*self.environments, *self.robots.values(), *self.inputs, *self.sensors)
         for item in items:
             item.reset()
         self.frame = 0
@@ -271,6 +275,12 @@ class NewtonianSimulator:
         Called by ray tracing sensor in 'on_model'.
         """
         self._needs_raytrace = True
+
+    def sense(self) -> list[Sensor]:
+        """
+        Calls sensor updates that are due at current sim time.
+        """
+        return update_sensors(sim=self, sensors=self.sensors)
 
     @property
     def sim_time(self) -> float:

@@ -35,7 +35,9 @@ class _Base(SensorFree):
     def update(self, sim: NewtonianSimulator, cache: Cache) -> None:
         """
         """
-        self.sensor.update(state=sim.state, contacts=need(arr=sim.contacts))
+        if sim.contacts is None:
+            raise ValueError(f"sensor cannot update when contacts are missing")
+        self.sensor.update(state=sim.state, contacts=sim.contacts)
         self.data = host(arr=self.sensor.total_force).sum(axis=0)
 
     def _wrench(self, stamp: Time, data: np.ndarray) -> WrenchStamped:

@@ -1,5 +1,5 @@
 
-from .base import SENSORS, SensorFree, SensorFixed
-from . import camera, contact, imu, jointstate, lidar, odometry, raytrace
+from .base import SENSORS, SensorFree as Sensor, update_sensors
+from . import camera, contact, imu, jointstate, lidar, odometry
 
-__all__ = ["SENSORS", "SensorFree", "SensorFixed"]
+__all__ = ["SENSORS", "Sensor", "update_sensors"]

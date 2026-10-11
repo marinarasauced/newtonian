@@ -1,13 +1,8 @@
 
 from __future__ import annotations
 
-from typing import TypeVar
-
 import numpy as np
 import warp as wp
-
-
-T = TypeVar("T")
 
 
 def host(arr: wp.array | None) -> np.ndarray:
@@ -16,7 +11,7 @@ def host(arr: wp.array | None) -> np.ndarray:
     return need(arr).numpy()
 
 
-def need(arr: T | None) -> T:
+def need(arr: wp.array | None) -> wp.array:
     """
     """
     if arr is None:
