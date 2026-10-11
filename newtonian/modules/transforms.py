@@ -47,5 +47,5 @@ def tf_mul(a: np.ndarray, b: np.ndarray) -> np.ndarray:
 
 
 _R = np.array([[0.0, 0.0, -1.0], [-1.0, 0.0, 0.0], [0.0, 1.0, 0.0]], dtype=np.float32)
-CONVERT_ROS_TO_GL = np.array(wp.quat_from_matrix(wp.mat33(*_R.flatten())), dtype=np.float64)    # pyright: ignore[reportCallIssue]  (Warp stubs: mat33f is not typed as Matrix)
+CONVERT_ROS_TO_GL = np.array(wp.quat_from_matrix(wp.mat33(*_R.flatten())), dtype=np.float64)    # pyright: ignore[reportCallIssue, reportArgumentType]
 TRANSFORM_ROS_TO_GL = np.concatenate([np.zeros(3), CONVERT_ROS_TO_GL])
