@@ -106,7 +106,7 @@ class Parameters:
             raise ParameterError(f"{self.prefix}{key} exepceted a value at least {at_least} but got {value!r}")
         return int(value)
 
-    def get_float(self, key: str, default: Any = _MISSING, above: float | None = None) -> float:
+    def get_float(self, key: str, default: Any = _MISSING, above: float | None = None, at_least: float | None = None) -> float:
         """
         """
         value = self.get(key=key, default=default)
@@ -114,6 +114,8 @@ class Parameters:
             raise ParameterError(f"{self.prefix}{key} expected a number but got {value!r}")
         if above is not None and not value > above:
             raise ParameterError(f"{self.prefix}{key} exepceted a value above {above} but got {value!r}")
+        if at_least is not None and not value >= at_least:
+            raise ParameterError(f"{self.prefix}{key} exepceted a value at least {at_least} but got {value!r}")
         return float(value)
 
     def get_choice(self, key: str, choices: Iterable[str], default: Any = _MISSING) -> str:
