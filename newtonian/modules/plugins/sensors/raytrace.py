@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from newtonian.modules.physics.simulator import NewtonianSimulator
 
 
-class SensorFixedRaytrace(SensorFixed):
+class SensorRaytrace(SensorFixed):
     """
     """
 

@@ -10,13 +10,13 @@ from builtin_interfaces.msg import Time
 from sensor_msgs.msg import LaserScan
 
 from newtonian.modules.plugins.sensors.base import SENSORS, Cache, noise
-from newtonian.modules.plugins.sensors.raytrace import SensorFixedRaytrace
+from newtonian.modules.plugins.sensors.raytrace import SensorRaytrace
 
 if TYPE_CHECKING:
     from newtonian.modules.physics.simulator import NewtonianSimulator
 
 
-class _Base(SensorFixedRaytrace):
+class _Base(SensorRaytrace):
     """
     """
     msg_type = LaserScan
@@ -65,7 +65,7 @@ class _Base(SensorFixedRaytrace):
 
 
 @SENSORS.register("lidar")
-class SensorFixedLidar(_Base):
+class SensorLidar(_Base):
     """
     """
 

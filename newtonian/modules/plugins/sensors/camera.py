@@ -10,13 +10,13 @@ from builtin_interfaces.msg import Time
 from sensor_msgs.msg import Image
 
 from newtonian.modules.plugins.sensors.base import SENSORS, Cache
-from newtonian.modules.plugins.sensors.raytrace import SensorFixedRaytrace
+from newtonian.modules.plugins.sensors.raytrace import SensorRaytrace
 
 if TYPE_CHECKING:
     from newtonian.modules.physics.simulator import NewtonianSimulator
 
 
-class _Base(SensorFixedRaytrace):
+class _Base(SensorRaytrace):
     """
     """
     msg_type = Image
@@ -48,7 +48,7 @@ class _Base(SensorFixedRaytrace):
 
 
 @SENSORS.register("camera_color")
-class SensorFixedCameraColor(_Base):
+class SensorCameraColor(_Base):
     """
     """
 
@@ -74,7 +74,7 @@ class SensorFixedCameraColor(_Base):
 
 
 @SENSORS.register("camera_depth")
-class SensorFixedCameraDepth(_Base):
+class SensorCameraDepth(_Base):
     """
     """
 

@@ -71,7 +71,7 @@ class _Base(SensorFixed):
 
 
 @SENSORS.register("imu")
-class SensorFixedImu(_Base):
+class SensorImu(_Base):
     """
     """
 

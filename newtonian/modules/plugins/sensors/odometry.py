@@ -11,7 +11,7 @@ from builtin_interfaces.msg import Time
 from nav_msgs.msg import Odometry
 
 from newtonian.modules.arrays import host
-from newtonian.modules.plugins.sensors.base import SENSORS, Cache, SensorFree, noise
+from newtonian.modules.plugins.sensors.base import SENSORS, Cache, Sensor, noise
 from newtonian.modules.transforms import quat_rotate, quat_rotate_inv
 
 if TYPE_CHECKING:
@@ -27,7 +27,7 @@ class _Data:
     w: np.ndarray
 
 
-class _Base(SensorFree):
+class _Base(Sensor):
     """
     """
     msg_type = Odometry
@@ -81,7 +81,7 @@ class _Base(SensorFree):
 
 
 @SENSORS.register("odometry")
-class SensorFreeOdometry(_Base):
+class SensorOdometry(_Base):
     """
     """
 

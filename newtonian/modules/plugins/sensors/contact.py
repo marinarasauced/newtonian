@@ -10,13 +10,13 @@ from builtin_interfaces.msg import Time
 from geometry_msgs.msg import WrenchStamped
 
 from newtonian.modules.arrays import host, need
-from newtonian.modules.plugins.sensors.base import SENSORS, Cache, SensorFree
+from newtonian.modules.plugins.sensors.base import SENSORS, Cache, Sensor
 
 if TYPE_CHECKING:
     from newtonian.modules.physics.simulator import NewtonianSimulator
 
 
-class _Base(SensorFree):
+class _Base(Sensor):
     """
     """
     msg_type = WrenchStamped
@@ -55,7 +55,7 @@ class _Base(SensorFree):
 
 
 @SENSORS.register("contact_force")
-class SensorFreeContactForce(_Base):
+class SensorContactForce(_Base):
     """
     """
 
@@ -66,7 +66,7 @@ class SensorFreeContactForce(_Base):
 
 
 @SENSORS.register("contact_scalar")
-class SensorFreeContactScalar(_Base):
+class SensorContactScalar(_Base):
     """
     """
 

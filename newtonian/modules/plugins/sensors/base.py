@@ -28,7 +28,7 @@ SENSORS: Registry = Registry("sensor")
 # --- Sensor Plugins -------------------------------------------------------------
 
 
-class SensorFree(Plugin):
+class Sensor(Plugin):
     """
     """
     msg_type: type
@@ -84,7 +84,7 @@ class SensorFree(Plugin):
         raise NotImplementedError
 
 
-class SensorFixed(SensorFree):
+class SensorFixed(Sensor):
     """
     """
 
@@ -170,7 +170,7 @@ def noise(sim: NewtonianSimulator, std: float, shape: int | tuple[int, ...]) -> 
     return sim.rng.normal(0.0, std, shape) if std > 0.0 else np.zeros(shape)
 
 
-def update_sensors(sim: NewtonianSimulator, sensors: list[SensorFree]) -> list[SensorFree]:
+def update_sensors(sim: NewtonianSimulator, sensors: list[Sensor]) -> list[Sensor]:
     """
     """
     due = [s for s in sensors if s.is_due(sim_time=sim.sim_time)]

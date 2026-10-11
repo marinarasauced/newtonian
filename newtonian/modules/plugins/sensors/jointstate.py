@@ -12,7 +12,7 @@ from builtin_interfaces.msg import Time
 from sensor_msgs.msg import JointState
 
 from newtonian.modules.arrays import host
-from newtonian.modules.plugins.sensors.base import SENSORS, Cache, SensorFree
+from newtonian.modules.plugins.sensors.base import SENSORS, Cache, Sensor
 
 if TYPE_CHECKING:
     from newtonian.modules.physics.simulator import NewtonianSimulator
@@ -29,7 +29,7 @@ class _Data:
     qd: np.ndarray
 
 
-class _Base(SensorFree):
+class _Base(Sensor):
     """
     """
     msg_type = JointState
@@ -64,7 +64,7 @@ class _Base(SensorFree):
 
 
 @SENSORS.register("jointstate")
-class SensorFreeJointState(_Base):
+class SensorJointState(_Base):
     """
     """
 
