@@ -9,8 +9,7 @@ import warp as wp
 from builtin_interfaces.msg import Time
 from sensor_msgs.msg import Image
 
-from newtonian.modules.plugins.sensors.base import SENSORS, Cache
-from newtonian.modules.plugins.sensors.raytrace import SensorRaytrace
+from newtonian.modules.plugins.sensors.base import SENSORS, Cache, SensorRaytrace
 
 if TYPE_CHECKING:
     from newtonian.modules.physics.simulator import NewtonianSimulator
