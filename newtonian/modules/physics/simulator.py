@@ -99,7 +99,7 @@ class NewtonianSimulator:
         self.solver_plugin.builder_prepare(scene)
 
         # plugins (environments)
-        self.environments: list[Environment] = [ENVIRONMENTS.get(q.get("type"))(n, q) for n, q in p.entries("environment")]
+        self.environments: list[Environment] = [ENVIRONMENTS.get(q.get("type"))(n, q) for n, q in p.entries("environments")]
 
         # plugins (robots)
         self.robots = Robots((n, ROBOTS.get(q.get("type"))(n, q)) for n, q in p.entries("robots"))
