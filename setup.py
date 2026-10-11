@@ -1,10 +1,12 @@
 
 from glob import glob
 import os
+import xml.etree.ElementTree as ET
 from setuptools import find_packages, setup
 
 
 PACKAGE = 'newtonian'
+VERSION = ET.parse('package.xml').getroot().findtext('version')
 
 
 def tree(source: str) -> list[tuple[str, list[str]]]:
@@ -15,7 +17,7 @@ def tree(source: str) -> list[tuple[str, list[str]]]:
 
 setup(
     name=PACKAGE,
-    version='0.3.0',
+    version=VERSION,
     packages=find_packages(exclude=['test']),
     data_files=[
         ('share/ament_index/resource_index/packages', ['resource/' + PACKAGE]),
