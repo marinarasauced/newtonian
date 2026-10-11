@@ -20,10 +20,6 @@
   <depend>launch</depend>
   <depend>launch_ros</depend>
 
-  <exec_depend>python3_numpy</exec_depend>
-  <exec_depend>python3_pil</exec_depend>
-  <exec_depend>python3_yaml</exec_depend>
-
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>
   <test_depend>ament_mypy</test_depend>
