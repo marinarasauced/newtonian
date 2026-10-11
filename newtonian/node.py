@@ -145,6 +145,7 @@ class NewtonNode(Node):
         """
         if self.sim is not None:
             self.sim.pause(is_paused=bool(request.data))
+            response.message = "paused" if self.sim.is_paused else "running"
         response.success = self.sim is not None
         return response
 

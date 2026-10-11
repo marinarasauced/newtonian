@@ -216,13 +216,24 @@ class NewtonianSimulator:
             self.viewer.close()
             self.viewer = None
 
+    @property
+    def is_paused(self) -> bool:
+        """
+        True if stepping is paused.
+        False otherwise.
+        """
+        if self.viewer is not None:
+            return self.viewer.is_paused
+        return self._is_paused
+
     def pause(self, is_paused: bool) -> None:
         """
         Pauses or unpauses stepping.
         """
-        self._is_paused = is_paused
         if self.viewer is not None:
             self.viewer.is_paused = is_paused
+        else:
+            self._is_paused = is_paused
 
     def render(self) -> None:
         """
@@ -281,7 +292,7 @@ class NewtonianSimulator:
         """
         if self.viewer is not None:
             return self.viewer.stepable()
-        return not self._is_paused
+        return not self.is_paused
 
     def step(self) -> None:
         """
