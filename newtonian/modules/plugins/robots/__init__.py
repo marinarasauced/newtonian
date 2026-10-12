@@ -1,5 +1,5 @@
 
 from .base import ROBOTS, Robot, Robots
-from . import robot_mjcf, robot_usd, robot_urdf
+from . import mjcf, urdf, usd
 
 __all__ = ["ROBOTS", "Robot", "Robots"]

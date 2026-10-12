@@ -10,4 +10,6 @@ from newtonian.modules.plugins.robots.base import ROBOTS, Robot
 class RobotURDF(Robot):
 
     def load(self, builder: newton.ModelBuilder, path: str, xform, floating: bool, args: dict) -> None:
+        """
+        """
         builder.add_urdf(source=path, xform=xform, floating=floating, **args)
