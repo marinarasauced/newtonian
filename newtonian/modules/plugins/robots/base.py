@@ -72,7 +72,7 @@ class Robot(Plugin):
         p = self.p
 
         robot_builder = newton.ModelBuilder(up_axis=builder.up_axis, gravity=builder.gravity)
-        sim.solver_plugin.builder_prepare(robot_builder)
+        sim.solver_plugin.before_build(robot_builder)
         _configure(cfg=robot_builder.default_joint_cfg, values=p.subtree("joint_cfg").as_kwargs(), where=f"{p.prefix}joint_cfg")
         _configure(cfg=robot_builder.default_shape_cfg, values=p.subtree("shape_cfg").as_kwargs(), where=f"{p.prefix}shape_cfg")
 
@@ -142,15 +142,15 @@ class Robot(Plugin):
         """
         return self._find(table=self.bodies, pattern=pattern, what="body")
 
+    def find_body(self, name: str | None) -> int:
+        """
+        """
+        return self.root if not name else self.find_bodies(pattern=name)[0]
+
     def find_shapes(self, pattern: str | list[str]) -> list[int]:
         """
         """
         return self._find(table=self.shapes, pattern=pattern, what="shape/site")
-
-    def body(self, name: str | None) -> int:
-        """
-        """
-        return self.root if not name else self.find_bodies(pattern=name)[0]
 
     def _find(self, table: dict[int, str], pattern: str | list[str], what: str) -> list[int]:
         """

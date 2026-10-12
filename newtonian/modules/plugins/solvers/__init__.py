@@ -1,5 +1,5 @@
 
-from .base import SOLVERS, SolverPlugin
+from .base import SOLVERS, Solver
 from . import featherstone, kamino, mujoco, xpbd
 
-__all__ = ["SOLVERS", "SolverPlugin"]
+__all__ = ["SOLVERS", "Solver"]

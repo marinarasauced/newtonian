@@ -96,7 +96,7 @@ class NewtonianSimulator:
         solver_type = p.get("solver.type", "mujoco")
         self.solver_plugin = SOLVERS.get(solver_type)(p.subtree(f"solver.{solver_type}").as_kwargs())
         scene = newton.ModelBuilder(gravity=(0.0, 0.0, self.gravity))
-        self.solver_plugin.builder_prepare(scene)
+        self.solver_plugin.before_build(scene)
 
         # plugins (environments)
         self.environments: list[Environment] = [ENVIRONMENTS.get(q.get("type"))(n, q) for n, q in p.entries("environments")]
@@ -116,7 +116,7 @@ class NewtonianSimulator:
         plugins: tuple[Environment | Robot | Input | Sensor, ...] = (*self.environments, *self.robots.values(), *self.inputs, *self.sensors)
         for item in plugins:
             item.on_build(self, scene)
-        self.solver_plugin.builder_finalize(scene)
+        self.solver_plugin.before_finalize(scene)
         self.model = scene.finalize()
         for item in plugins:
             item.on_model(sim=self)

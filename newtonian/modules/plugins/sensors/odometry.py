@@ -36,7 +36,7 @@ class _Base(Sensor):
         """
         p = self.p
 
-        self.body = self.robot.body(name=p.get(key="body", default=None))
+        self.body = self.robot.find_body(name=p.get(key="body", default=None))
         self.frame_id = self.frame_id or "odom"
         self.child_frame_id = p.get(key="child_frame_id", default=self.robot.bodies[self.body])
         self.com = host(arr=sim.model.body_com)[self.body].astype(np.float64)

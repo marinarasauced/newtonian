@@ -11,7 +11,7 @@ from __future__ import annotations
 import newton
 import warp as wp
 
-from newtonian.modules.plugins.solvers.base import SOLVERS, SolverPlugin
+from newtonian.modules.plugins.solvers.base import SOLVERS, Solver
 
 
 @wp.kernel
@@ -149,45 +149,51 @@ def _estimate_contact_forces(
 
 
 @SOLVERS.register("featherstone")
-class SolverFeatherstonePlugin(SolverPlugin):
+class SolverFeatherstone(Solver):
+    """
+    """
     solver_cls = newton.solvers.SolverFeatherstone
-
-    def update_contacts(self, solver, contacts: newton.Contacts, state: newton.State) -> None:
-            if contacts.force is None or not contacts.rigid_contact_max:
-                return
-            model = solver.model
-            wp.launch(
-                kernel=_estimate_contact_forces,
-                dim=contacts.rigid_contact_max,
-                inputs=[
-                    state.body_q,
-                    state.body_qd,
-                    model.body_com,
-                    model.shape_material_ke,
-                    model.shape_material_kd,
-                    model.shape_material_kf,
-                    model.shape_material_ka,
-                    model.shape_material_mu,
-                    model.shape_body,
-                    contacts.rigid_contact_count,
-                    contacts.rigid_contact_point0,
-                    contacts.rigid_contact_point1,
-                    contacts.rigid_contact_normal,
-                    contacts.rigid_contact_shape0,
-                    contacts.rigid_contact_shape1,
-                    contacts.rigid_contact_margin0,
-                    contacts.rigid_contact_margin1,
-                    contacts.rigid_contact_stiffness,
-                    contacts.rigid_contact_damping,
-                    contacts.rigid_contact_friction,
-                    solver.friction_smoothing,
-                ],
-                outputs= [
-                    contacts.force,
-                ],
-                device=model.device,
-            )
 
     @property
     def reports_contact_forces(self) -> bool:
+        """
+        """
         return True
+
+    def update_contacts(self, solver: newton.solvers.SolverBase, contacts: newton.Contacts, state: newton.State) -> None:
+        """
+        """
+        if contacts.force is None or not contacts.rigid_contact_max:
+            return
+        model = solver.model
+        wp.launch(
+            kernel=_estimate_contact_forces,
+            dim=contacts.rigid_contact_max,
+            inputs=[
+                state.body_q,
+                state.body_qd,
+                model.body_com,
+                model.shape_material_ke,
+                model.shape_material_kd,
+                model.shape_material_kf,
+                model.shape_material_ka,
+                model.shape_material_mu,
+                model.shape_body,
+                contacts.rigid_contact_count,
+                contacts.rigid_contact_point0,
+                contacts.rigid_contact_point1,
+                contacts.rigid_contact_normal,
+                contacts.rigid_contact_shape0,
+                contacts.rigid_contact_shape1,
+                contacts.rigid_contact_margin0,
+                contacts.rigid_contact_margin1,
+                contacts.rigid_contact_stiffness,
+                contacts.rigid_contact_damping,
+                contacts.rigid_contact_friction,
+                solver.friction_smoothing,
+            ],
+            outputs=[
+                contacts.force,
+            ],
+            device=model.device,
+        )
