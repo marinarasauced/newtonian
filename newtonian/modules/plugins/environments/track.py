@@ -1,6 +1,8 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from pathlib import Path
 
 import newton
@@ -12,59 +14,52 @@ import yaml
 from newtonian.modules.paths import resolve
 from newtonian.modules.plugins.environments.base import ENVIRONMENTS, Environment
 
+if TYPE_CHECKING:
+    from newtonian.modules.physics.simulator import NewtonianSimulator
+
 
 @ENVIRONMENTS.register("track")
 class EnvironmentTrack(Environment):
+    """
+    """
 
-    def on_build(self, sim, builder: newton.ModelBuilder):
+    def on_build(self, sim: NewtonianSimulator, builder: newton.ModelBuilder):
+        """
+        """
+        super().on_build(sim=sim, builder=builder)
+        p = self.p
+
         from PIL import Image
 
-        map = Path(resolve(self.p.get("map")))
-        meta = yaml.safe_load(map.read_text())
+        map = Path(resolve(uri=p.get(key="map")))
+        meta = yaml.safe_load(stream=map.read_text())
         image = np.asarray(Image.open(map.parent / meta["image"]).convert("L"), dtype=np.float32) / 255.0
         occ = image if meta.get("negate", 0) else 1.0 - image
         occupied = occ > float(meta.get("occupied_thresh", 0.65))
 
         res = float(meta["resolution"])
         ox, oy = float(meta["origin"][0]), float(meta["origin"][1])
-        height = float(self.p.get("wall_height", 0.3))
-        cfg = self.configure(builder)
-        c = self.color()
-        rows = occupied.shape[0]
+        height = float(p.get_float(key="wall_height", default=0.3, above=0.0))
 
-        for r0, c0, r1, c1 in _merge(occupied):
+        rectangles = []
+        rows, cols = occupied.shape
+        for row in range(rows):
+            col = 0
+            while col < cols:
+                if not occupied[row, col]:
+                    col += 1
+                    continue
+                col_end = col
+                while col_end < cols and occupied[row, col_end]:
+                    col_end += 1
+                row_end = row + 1
+                while row_end < rows and occupied[row_end, col:col_end].all():
+                    row_end += 1
+                occupied[row:row_end, col:col_end] = False
+                rectangles.append((row, col, row_end, col_end))
+                col = col_end
+
+        for r0, c0, r1, c1 in rectangles:
             x = ox + (c0 + c1) / 2.0 * res
             y = oy + (rows - (r0 + r1) / 2.0) * res
-            builder.add_shape_box(
-                body=-1,
-                xform=wp.transform(wp.vec3(x, y, height / 2), wp.quat_identity()),
-                hx=(c1 - c0) * res / 2,
-                hy=(r1 - r0) * res / 2,
-                hz=height / 2,
-                cfg=cfg,
-                color=c,
-            )
-
-
-def _merge(mask: np.ndarray) -> list[tuple[int, int, int, int]]:
-    """
-    """
-    mask = mask.copy()
-    rectangles = []
-    rows, cols = mask.shape
-    for r in range(rows):
-        c = 0
-        while c < cols:
-            if not mask[r, c]:
-                c += 1
-                continue
-            c_end = c
-            while c_end < cols and mask[r, c_end]:
-                c_end += 1
-            r_end = r + 1
-            while r_end < rows and mask[r_end, c:c_end].all():
-                r_end += 1
-            mask[r:r_end, c:c_end] = False
-            rectangles.append((r, c, r_end, c_end))
-            c = c_end
-    return rectangles
+            builder.add_shape_box(body=-1, xform=wp.transform(wp.vec3(x, y, height / 2), wp.quat_identity()), hx=(c1-c0)*res/2, hy=(r1-r0)*res/2, hz=height/2, cfg=self.cfg, color=self.color)
