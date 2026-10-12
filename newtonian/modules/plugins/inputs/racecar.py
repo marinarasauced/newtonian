@@ -8,7 +8,7 @@ import math
 
 from geometry_msgs.msg import Twist
 
-from newtonian.modules.arrays import host
+from newtonian.modules.arrays import to_numpy
 from newtonian.modules.params import Parameters, ParameterError
 from newtonian.modules.plugins.inputs.base import INPUTS, Input
 
@@ -59,8 +59,8 @@ class _Base(Input):
         """
         super().on_model(sim=sim)
 
-        joint_q_start = host(arr=sim.model.joint_q_start)
-        joint_qd_start = host(arr=sim.model.joint_qd_start)
+        joint_q_start = to_numpy(arr=sim.model.joint_q_start)
+        joint_qd_start = to_numpy(arr=sim.model.joint_qd_start)
         self.steer = {side: int(joint_q_start[self.robot.find_joints(pattern=n)[0]]) for side, n in self.joints_steering.items()}
         self.wheels = {role: int(joint_qd_start[self.robot.find_joints(pattern=n)[0]]) for role, n in self.joints_wheels.items()}
 

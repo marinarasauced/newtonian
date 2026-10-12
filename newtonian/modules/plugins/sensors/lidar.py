@@ -33,6 +33,11 @@ class _Base(SensorRaytrace):
         self.range_max = p.get_float(key="range_max", default=30.0, above=0.0)
         self.noise_std = p.get_float(key="noise_std", default=0.0, at_least=0.0)
 
+    def max_distance(self) -> float:
+        """
+        """
+        return self.range_max
+
     def on_model(self, sim: NewtonianSimulator) -> None:
         """
         """

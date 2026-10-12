@@ -9,7 +9,7 @@ import numpy as np
 from builtin_interfaces.msg import Time
 from nav_msgs.msg import Odometry
 
-from newtonian.modules.arrays import host
+from newtonian.modules.arrays import to_numpy
 from newtonian.modules.plugins.sensors.base import SENSORS, Cache, Sensor, noise
 from newtonian.modules.transforms import quat_rotate, quat_rotate_inv
 
@@ -40,7 +40,7 @@ class _Base(Sensor):
         self.body = self.robot.find_body(name=p.get(key="body", default=None))
         self.frame_id = self.frame_id or "odom"
         self.child_frame_id = p.get(key="child_frame_id", default=self.robot.bodies[self.body])
-        self.com = host(arr=sim.model.body_com)[self.body].astype(np.float64)
+        self.com = to_numpy(arr=sim.model.body_com)[self.body].astype(np.float64)
         self.pose_std = p.get_float(key="pose_noise_std", default=0.0, at_least=0.0)
         self.twist_std = p.get_float(key="twist_noise_std", default=0.0, at_least=0.0)
 
@@ -94,7 +94,7 @@ class SensorOdometry(_Base):
         """
         X = cache.body_q()[self.body].astype(np.float64)
         q = X[3:]
-        qd = host(arr=sim.state.body_qd)[self.body].astype(np.float64)
+        qd = to_numpy(arr=sim.state.body_qd)[self.body].astype(np.float64)
         v_com, w = qd[:3], qd[3:]
         v_origin = v_com + np.cross(a=w, b=-quat_rotate(quat=q, vec=self.com))
         pose = X.copy()

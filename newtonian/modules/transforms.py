@@ -4,12 +4,16 @@ from __future__ import annotations
 import numpy as np
 import warp as wp
 
+from newtonian.modules.params import ParameterError
 
-def convert_pose_to_transform(pose) -> wp.transform:
+
+def convert_pose_to_transform(pose: list[float] | None, where: str = "pose") -> wp.transform:
     """
     """
-    pose = list(pose or [0.0] * 6) + [0.0] * 6
-    x, y, z, roll, pitch, yaw = (float(value) for value in pose[:6])
+    pose = pose or [0.0] * 6
+    if len(pose) != 6:
+        raise ParameterError(f"{where} expected [x, y, z, roll, pitch, yaw] but got {pose!r}")
+    x, y, z, roll, pitch, yaw = (float(value) for value in pose)
     q = wp.quat_rpy(roll=roll, pitch=pitch, yaw=yaw)
     return wp.transform(wp.vec3(x, y, z), q)
 

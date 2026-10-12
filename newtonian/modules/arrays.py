@@ -5,13 +5,13 @@ import numpy as np
 import warp as wp
 
 
-def host(arr: wp.array | None) -> np.ndarray:
+def to_numpy(arr: wp.array | None) -> np.ndarray:
     """
     """
-    return need(arr).numpy()
+    return require(arr).numpy()
 
 
-def need(arr: wp.array | None) -> wp.array:
+def require(arr: wp.array | None) -> wp.array:
     """
     """
     if arr is None:

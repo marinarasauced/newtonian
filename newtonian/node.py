@@ -1,11 +1,14 @@
 
 from __future__ import annotations
 
+import time
+
 import rclpy
 import rclpy.executors
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 from rclpy.subscription import Subscription
+from rclpy.timer import Timer
 from rclpy.qos import QoSProfile, qos_profile_sensor_data
 
 from builtin_interfaces.msg import Time
@@ -17,6 +20,8 @@ from newtonian.modules.physics.simulator import NewtonianSimulator
 
 
 _ROS_PARAMETERS = ("use_sim_time", "start_type_description_service")
+_RTF_WINDOW = 5.0
+_RTF_TOLERANCE = 0.01
 
 
 def _qos(item) -> QoSProfile:
@@ -32,7 +37,6 @@ def _qos(item) -> QoSProfile:
 class NewtonianNode(Node):
     """
     """
-    timer = None
 
     def __init__(self) -> None:
         """
@@ -40,9 +44,10 @@ class NewtonianNode(Node):
         super().__init__("newtonian", allow_undeclared_parameters=True, automatically_declare_parameters_from_overrides=True)
 
         self.sim: NewtonianSimulator | None = None
+        self.timer: Timer | None = None
         self.publishers_: dict[str, Publisher] = {}
         self.subscriptions_: list[Subscription] = []
-        self.clock_pub = self.create_publisher(msg_type=Clock, topic="/clock", qos_profile=10)
+        self.clock_pub = self.create_publisher(msg_type=Clock, topic="/clock", qos_profile=QoSProfile(depth=1))
         self.create_service(srv_type=Trigger, srv_name="~/reset", callback=self._on_reset)
         self.create_service(srv_type=Trigger, srv_name="~/rebuild", callback=self._on_rebuild)
         self.create_service(srv_type=SetBool, srv_name="~/pause", callback=self._on_pause)
@@ -93,9 +98,9 @@ class NewtonianNode(Node):
         for i in self.sim.inputs:
             self.subscriptions_.append(self.create_subscription(i.msg_type, i.topic, i.callback, _qos(i)))
 
-        rtf = p.get_float(key="sim.real_time_factor", default=1.0, above=0.0)
-        period = self.sim.frame_dt / rtf
-        self.timer = self.create_timer(timer_period_sec=period, callback=self._on_timer)
+        self.rtf = self.sim.real_time_factor
+        self._rtf_window: tuple[float, float] | None = None
+        self.timer = self.create_timer(timer_period_sec=self.sim.frame_dt / self.rtf, callback=self._on_timer)
 
     def _stamp(self, sim: NewtonianSimulator) -> Time:
         """
@@ -113,7 +118,10 @@ class NewtonianNode(Node):
             self.get_logger().info("viewer closed, shutting down ...")
             rclpy.try_shutdown()
             return
-        if sim.stepable():
+        if not sim.stepable():
+            self._rtf_window = None
+        else:
+            self._check_rtf(sim=sim)
             sim.step()
             stamp = self._stamp(sim=sim)
             self.clock_pub.publish(Clock(clock=stamp))
@@ -121,9 +129,25 @@ class NewtonianNode(Node):
                 self.publishers_[s.name].publish(s.to_msg(stamp=stamp))
         sim.render()
 
+    def _check_rtf(self, sim: NewtonianSimulator) -> None:
+        """
+        """
+        now = time.monotonic()
+        if self._rtf_window is None:
+            self._rtf_window = (now, sim.sim_time)
+            return
+        wall_start, sim_start = self._rtf_window
+        if now - wall_start < _RTF_WINDOW:
+            return
+        rtf = (sim.sim_time - sim_start) / (now - wall_start)
+        if abs(rtf - self.rtf) > _RTF_TOLERANCE * self.rtf:
+            self.get_logger().warning(f"real-time factor {rtf:.2f} differs from the target {self.rtf:.2f}")
+        self._rtf_window = (now, sim.sim_time)
+
     def _on_reset(self, request: Trigger.Request, response: Trigger.Response) -> Trigger.Response:
         """
         """
+        self._rtf_window = None
         if self.sim is None:
             response.success = False
             response.message = "no scene"
@@ -164,8 +188,9 @@ def main(args=None) -> None:
     """
     """
     rclpy.init(args=args)
-    node = NewtonianNode()
+    node = None
     try:
+        node = NewtonianNode()
         rclpy.spin(node)
     except KeyboardInterrupt:
         pass
@@ -175,5 +200,6 @@ def main(args=None) -> None:
         if rclpy.ok():
             raise
     finally:
-        node.destroy_node()
+        if node is not None:
+            node.destroy_node()
         rclpy.try_shutdown()

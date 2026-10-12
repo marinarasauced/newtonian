@@ -35,6 +35,11 @@ def generate_launch_description():
                 default_value="racecar",
                 description="config name or parameter file path",
             ),
+            DeclareLaunchArgument(
+                name="use_sim_time",
+                default_value="true",
+                description="use /clock in nodes started next to the simulator (the simulator itself runs on wall time)",
+            ),
             OpaqueFunction(
                 function=_node
             ),

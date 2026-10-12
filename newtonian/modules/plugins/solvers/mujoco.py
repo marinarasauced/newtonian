@@ -18,6 +18,12 @@ class SolverMuJoCo(Solver):
         newton.solvers.SolverMuJoCo.register_custom_attributes(builder=builder)
 
     @property
+    def reports_actuator_forces(self) -> bool:
+        """
+        """
+        return True
+
+    @property
     def reports_contact_forces(self) -> bool:
         """
         """

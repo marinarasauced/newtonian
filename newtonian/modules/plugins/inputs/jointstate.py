@@ -9,7 +9,8 @@ import math
 
 from sensor_msgs.msg import JointState
 
-from newtonian.modules.arrays import host
+from newtonian.modules.arrays import to_numpy
+from newtonian.modules.params import Parameters
 from newtonian.modules.plugins.inputs.base import INPUTS, Input
 from newtonian.modules.plugins.robots.base import JOINT_TYPES
 
@@ -37,9 +38,9 @@ class _Base(Input):
         """
         super().on_model(sim=sim)
 
-        joint_type = host(arr=sim.model.joint_type)
-        joint_q_start = host(arr=sim.model.joint_q_start)
-        joint_qd_start = host(arr=sim.model.joint_qd_start)
+        joint_type = to_numpy(arr=sim.model.joint_type)
+        joint_q_start = to_numpy(arr=sim.model.joint_q_start)
+        joint_qd_start = to_numpy(arr=sim.model.joint_qd_start)
         self.index: dict[str, tuple[int, int]] = {name: (int(joint_q_start[j]), int(joint_qd_start[j])) for j, name in self.robot.joints.items() if joint_type[j] in JOINT_TYPES}
 
     def _command(self, msg: JointState) -> _Command:
@@ -76,7 +77,24 @@ class InputJointState(_Base):
     """
     """
 
+    def __init__(self, name: str, p: Parameters) -> None:
+        """
+        """
+        super().__init__(name=name, p=p)
+
+        self._handled: JointState | None = None
+
     def handle(self, sim: NewtonianSimulator, msg: JointState) -> None:
         """
         """
+        if msg is self._handled:
+            return
         self._write(sim=sim, command=self._command(msg=msg))
+        self._handled = msg
+
+    def reset(self) -> None:
+        """
+        """
+        super().reset()
+
+        self._handled = None

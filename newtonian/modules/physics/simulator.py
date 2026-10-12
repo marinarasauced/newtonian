@@ -5,7 +5,7 @@ import newton
 import numpy as np
 import warp as wp
 
-from newtonian.modules.arrays import host, need
+from newtonian.modules.arrays import require, to_numpy
 from newtonian.modules.params import ParameterError, Parameters
 
 from newtonian.modules.physics.viewer import NewtonianViewer
@@ -26,18 +26,18 @@ class NewtonianSimulatorBuffers:
     def __init__(self, control: newton.Control) -> None:
         """
         """
-        self.joint_target_q = host(arr=control.joint_target_q).copy()
-        self.joint_target_qd = host(arr=control.joint_target_qd).copy()
-        self.joint_f = host(arr=control.joint_f).copy()
+        self.joint_target_q = to_numpy(arr=control.joint_target_q).copy()
+        self.joint_target_qd = to_numpy(arr=control.joint_target_qd).copy()
+        self.joint_f = to_numpy(arr=control.joint_f).copy()
         self.dirty = False
 
     def write(self, control: newton.Control) -> None:
         """
         Writes copies of the host arrays into 'control' and clears 'dirty'.
         """
-        need(arr=control.joint_target_q).assign(self.joint_target_q)
-        need(arr=control.joint_target_qd).assign(self.joint_target_qd)
-        need(arr=control.joint_f).assign(self.joint_f)
+        require(arr=control.joint_target_q).assign(self.joint_target_q)
+        require(arr=control.joint_target_qd).assign(self.joint_target_qd)
+        require(arr=control.joint_f).assign(self.joint_f)
         self.dirty = False
 
 
@@ -63,6 +63,7 @@ class NewtonianSimulator:
         self.frame_rate = s.get_float(key="frame_rate", default=60.0, above=0.0)
         self.frame_dt = 1.0 / self.frame_rate
         self.sim_dt = self.frame_dt / self.substeps
+        self.real_time_factor = s.get_float(key="real_time_factor", default=1.0, above=0.0)
 
         self.gravity = s.get_float(key="gravity", default=-9.81)
         self.viewer_type = s.get_choice(key="viewer", choices=("none", "gl"), default="none")
@@ -101,18 +102,19 @@ class NewtonianSimulator:
         self.solver_plugin.before_build(scene)
 
         # plugins (environments)
-        self.environments: list[Environment] = [ENVIRONMENTS.get(q.get("type"))(n, q) for n, q in p.entries("environments")]
+        self.environments: list[Environment] = [ENVIRONMENTS.get(q.get(key="type"))(n, q) for n, q in p.entries("environments")]
 
         # plugins (robots)
-        self.robots = Robots((n, ROBOTS.get(q.get("type"))(n, q)) for n, q in p.entries("robots"))
+        self.robots = Robots((n, ROBOTS.get(q.get(key="type"))(n, q)) for n, q in p.entries("robots"))
         if len(self.robots) > 1:
             raise ParameterError(f"robots has {len(self.robots)} entries but only one robot per sim is supported")
 
         # plugins (inputs)
-        self.inputs: list[Input] = [INPUTS.get(q.get("type"))(n, q) for n, q in p.entries("inputs")]
+        self.inputs: list[Input] = [INPUTS.get(q.get(key="type"))(n, q) for n, q in p.entries("inputs")]
 
         # plugins (sensors)
-        self.sensors: list[Sensor] = [SENSORS.get(q.get("type"))(n, q) for n, q in p.entries("sensors")]
+        self.sensors: list[Sensor] = [SENSORS.get(q.get(key="type"))(n, q) for n, q in p.entries("sensors")]
+        self.sensors += [c for s in self.sensors for c in s.companions()]
 
         # plugins
         self.plugins: tuple[Plugin, ...] = (*self.environments, *self.robots.values(), *self.inputs, *self.sensors)
@@ -127,7 +129,7 @@ class NewtonianSimulator:
         if self._needs_contacts and not self.solver_plugin.reports_contact_forces:
             raise ParameterError(f"solver.type '{solver_type}' does not report contact forces, which contact sensors need")
 
-        if not self.solver_plugin.supports_lazy_drives and any(len(r._lazy_dofs) for r in self.robots.values()):
+        if not self.solver_plugin.supports_lazy_drives and any(r.has_lazy_drives for r in self.robots.values()):
             raise ParameterError(f"solver.type '{solver_type}' does not support lazy drives")
 
         # build solver
@@ -137,7 +139,7 @@ class NewtonianSimulator:
         self.state_0 = self.model.state()
         self.state_1 = self.model.state()
         self.control = self.model.control()
-        newton.eval_fk(model=self.model, joint_q=need(self.model.joint_q), joint_qd=need(self.model.joint_qd), state=self.state_0)
+        newton.eval_fk(model=self.model, joint_q=require(self.model.joint_q), joint_qd=require(self.model.joint_qd), state=self.state_0)
 
         self.buffers = NewtonianSimulatorBuffers(control=self.control)
         self._buffers_initial = (self.buffers.joint_target_q.copy(), self.buffers.joint_target_qd.copy(), self.buffers.joint_f.copy())

@@ -9,7 +9,7 @@ import numpy as np
 from builtin_interfaces.msg import Time
 from geometry_msgs.msg import WrenchStamped
 
-from newtonian.modules.arrays import host
+from newtonian.modules.arrays import to_numpy
 from newtonian.modules.plugins.sensors.base import SENSORS, Cache, Sensor
 
 if TYPE_CHECKING:
@@ -38,7 +38,7 @@ class _Base(Sensor):
         if sim.contacts is None:
             raise ValueError("sensor cannot update when contacts are missing")
         self.sensor.update(state=sim.state, contacts=sim.contacts)
-        self.data = host(arr=self.sensor.total_force).sum(axis=0)
+        self.data = to_numpy(arr=self.sensor.total_force).sum(axis=0)
 
     def _wrench(self, stamp: Time, data: np.ndarray) -> WrenchStamped:
         """

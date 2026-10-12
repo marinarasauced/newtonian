@@ -36,7 +36,8 @@ class EnvironmentTrack(Environment):
         occupied = occ > float(meta.get("occupied_thresh", 0.65))
 
         res = float(meta["resolution"])
-        ox, oy = float(meta["origin"][0]), float(meta["origin"][1])
+        ox, oy, yaw = (float(value) for value in meta["origin"][:3])
+        cos, sin = np.cos(yaw), np.sin(yaw)
         height = p.get_float(key="wall_height", default=0.3, above=0.0)
 
         rectangles = []
@@ -58,6 +59,8 @@ class EnvironmentTrack(Environment):
                 col = col_end
 
         for r0, c0, r1, c1 in rectangles:
-            x = ox + (c0 + c1) / 2.0 * res
-            y = oy + (rows - (r0 + r1) / 2.0) * res
-            builder.add_shape_box(body=-1, xform=wp.transform(wp.vec3(x, y, height / 2), wp.quat_identity()), hx=(c1-c0)*res/2, hy=(r1-r0)*res/2, hz=height/2, cfg=self.cfg, color=self.color)
+            mx = (c0 + c1) / 2.0 * res
+            my = (rows - (r0 + r1) / 2.0) * res
+            x = ox + cos * mx - sin * my
+            y = oy + sin * mx + cos * my
+            builder.add_shape_box(body=-1, xform=wp.transform(wp.vec3(x, y, height / 2), wp.quat_rpy(0.0, 0.0, yaw)), hx=(c1-c0)*res/2, hy=(r1-r0)*res/2, hz=height/2, cfg=self.cfg, color=self.color)

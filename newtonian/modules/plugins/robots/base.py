@@ -8,7 +8,7 @@ import newton
 import numpy as np
 import warp as wp
 
-from newtonian.modules.arrays import need
+from newtonian.modules.arrays import require
 from newtonian.modules.params import ParameterError, Parameters
 from newtonian.modules.paths import resolve
 from newtonian.modules.registry import Registry
@@ -81,7 +81,7 @@ class Robot(Plugin):
         self.load(
             builder=robot_builder,
             path=resolve(p.get(key="file")),
-            xform=convert_pose_to_transform(pose=p.get(key="pose", default=None)),
+            xform=convert_pose_to_transform(pose=p.get(key="pose", default=None), where=f"{p.prefix}pose"),
             floating=p.get_bool(key="floating", default=True),
             args=p.subtree("loader_args").as_kwargs(),
         )
@@ -127,11 +127,17 @@ class Robot(Plugin):
             self._set_lazy_gains(sim=self._sim, gains=np.zeros_like(self._lazy_gains))
             self._drives_active = False
 
-    def engage(self, sim: NewtonianSimulator) -> None:
+    @property
+    def has_lazy_drives(self) -> bool:
         """
         """
-        if not self._drives_active:
-            self._set_lazy_gains(sim=sim, gains=self._lazy_gains)
+        return bool(len(self._lazy_dofs))
+
+    def activate(self) -> None:
+        """
+        """
+        if self._sim is not None and not self._drives_active:
+            self._set_lazy_gains(sim=self._sim, gains=self._lazy_gains)
             self._drives_active = True
 
     def find_joints(self, pattern: str | list[str]) -> list[int]:
@@ -159,14 +165,14 @@ class Robot(Plugin):
         """
         found = [i for i, name in table.items() if matches(name=name, pattern=pattern)]
         if not found:
-            raise ValueError(f"robot '{self.name}' has no {what} matching {pattern!r}")
+            raise ParameterError(f"robot '{self.name}' has no {what} matching {pattern!r}")
         return found
 
     def _set_lazy_gains(self, sim: NewtonianSimulator, gains: np.ndarray) -> None:
         """
         """
         model = sim.model
-        for col, arr in enumerate((need(arr=model.joint_target_ke), need(arr=model.joint_target_kd))):
+        for col, arr in enumerate((require(arr=model.joint_target_ke), require(arr=model.joint_target_kd))):
             values = arr.numpy()
             values[self._lazy_dofs] = gains[:, col]
             arr.assign(values)
@@ -186,12 +192,12 @@ class Robots(dict[str, Robot]):
         """
         if name:
             if name not in self:
-                raise ValueError(f"{caller} : unknown robot '{name}' w.r.t. expected {sorted(self)}")
+                raise ParameterError(f"{caller} : unknown robot '{name}' w.r.t. expected {sorted(self)}")
             return self[name]
         if not self:
-            raise ValueError(f"{caller} : the scene has no robot")
+            raise ParameterError(f"{caller} : the scene has no robot")
         if len(self) > 1:
-            raise ValueError(f"{caller} : set 'robot' to one of {sorted(self)}")
+            raise ParameterError(f"{caller} : set 'robot' to one of {sorted(self)}")
         return next(iter(self.values()))
 
 

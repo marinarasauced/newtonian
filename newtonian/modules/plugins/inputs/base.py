@@ -62,7 +62,7 @@ class Input(Plugin):
             self.on_timeout(sim=sim)
             return
         self.handle(sim=sim, msg=msg)
-        self.robot.engage(sim=sim)
+        self.robot.activate()
 
     def handle(self, sim: NewtonianSimulator, msg: Any) -> None:
         """

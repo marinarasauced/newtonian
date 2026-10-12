@@ -9,7 +9,7 @@ import warp as wp
 
 from builtin_interfaces.msg import Time
 
-from newtonian.modules.arrays import host
+from newtonian.modules.arrays import to_numpy
 from newtonian.modules.params import ParameterError, Parameters
 from newtonian.modules.registry import Registry
 from newtonian.modules.transforms import TRANSFORM_ROS_TO_GL, convert_pose_to_transform, tf_mul
@@ -77,6 +77,11 @@ class Sensor(Plugin):
 
         self._due_time = 0.0
 
+    def companions(self) -> list[Sensor]:
+        """
+        """
+        return []
+
     def to_msg(self, stamp: Time) -> Any:
         """
         """
@@ -111,7 +116,7 @@ class SensorFixed(Sensor):
         if not bodies:
             raise ParameterError(f"{p.prefix}body {body_name!r} is not a body of robot '{self.robot.name}'")
         self.site_label = f"{self.name}_site"
-        builder.add_site(body=bodies[0], xform=convert_pose_to_transform(pose=p.get(key="offset", default=None)), label=f"{prefix}{self.site_label}")
+        builder.add_site(body=bodies[0], xform=convert_pose_to_transform(pose=p.get(key="offset", default=None), where=f"{p.prefix}offset"), label=f"{prefix}{self.site_label}")
         self.frame_id = self.frame_id or self.name
 
     def on_model(self, sim: NewtonianSimulator) -> None:
@@ -120,8 +125,8 @@ class SensorFixed(Sensor):
         super().on_model(sim=sim)
 
         self.site = self.robot.find_shapes(pattern=self.site_label)[0]
-        self.body = int(host(arr=sim.model.shape_body)[self.site])
-        self.offset = host(arr=sim.model.shape_transform)[self.site].astype(np.float64)
+        self.body = int(to_numpy(arr=sim.model.shape_body)[self.site])
+        self.offset = to_numpy(arr=sim.model.shape_transform)[self.site].astype(np.float64)
 
     def pose(self, cache: Cache) -> np.ndarray:
         """
@@ -139,13 +144,16 @@ class SensorRaytrace(SensorFixed):
         """
         """
         super().on_model(sim=sim)
-        p = self.p
 
         cfg = newton.sensors.SensorTiledCamera.RenderConfig()
-        if "max_distance" in p or hasattr(self, "range_max"):
-            cfg.max_distance = p.get_float(key="max_distance", default=getattr(self, "range_max", 1000.0), above=0.0)
+        cfg.max_distance = self.max_distance()
 
         self.tracer = newton.sensors.SensorTiledCamera(model=sim.model, default_render_config=cfg)
+
+    def max_distance(self) -> float:
+        """
+        """
+        return self.p.get_float(key="max_distance", default=1000.0, above=0.0)
 
     def transform(self, sim: NewtonianSimulator, cache: Cache) -> wp.array2d:
         """
@@ -176,7 +184,7 @@ class Cache:
         """
         """
         if self._body_q is None:
-            self._body_q = host(arr=self.sim.state.body_q)
+            self._body_q = to_numpy(arr=self.sim.state.body_q)
         return self._body_q
 
     def bvh_refit_shapes(self) -> None:

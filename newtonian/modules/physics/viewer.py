@@ -9,6 +9,10 @@ if TYPE_CHECKING:
     from newtonian.modules.physics.simulator import NewtonianSimulator
 
 
+_PANEL_MARGIN = 10
+_PANEL_ALPHA = 0.7
+
+
 class NewtonianViewer:
     """
     """
@@ -109,8 +113,8 @@ class NewtonianViewer:
         size = imgui.ImVec2(width - 2 * imgui.get_style().window_padding.x, 0)
 
         # button placement
-        imgui.set_next_window_pos(imgui.ImVec2(imgui.get_io().display_size.x - 10 * scale, bottom + 10 * scale), pivot=imgui.ImVec2(1.0, 0.0))
-        imgui.set_next_window_bg_alpha(0.7)
+        imgui.set_next_window_pos(imgui.ImVec2(imgui.get_io().display_size.x - _PANEL_MARGIN * scale, bottom + _PANEL_MARGIN * scale), pivot=imgui.ImVec2(1.0, 0.0))
+        imgui.set_next_window_bg_alpha(_PANEL_ALPHA)
 
         # overlay flags
         flags = (imgui.WindowFlags_.no_decoration.value | imgui.WindowFlags_.always_auto_resize.value | imgui.WindowFlags_.no_saved_settings.value | imgui.WindowFlags_.no_focus_on_appearing.value | imgui.WindowFlags_.no_nav.value | imgui.WindowFlags_.no_move.value)

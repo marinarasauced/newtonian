@@ -50,6 +50,12 @@ class Solver:
         return False
 
     @property
+    def reports_actuator_forces(self) -> bool:
+        """
+        """
+        return False
+
+    @property
     def supports_lazy_drives(self) -> bool:
         """
         """
