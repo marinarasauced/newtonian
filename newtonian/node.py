@@ -5,7 +5,7 @@ import rclpy
 import rclpy.executors
 from rclpy.node import Node
 from rclpy.publisher import Publisher
-from rclpy.subscription import  Subscription
+from rclpy.subscription import Subscription
 from rclpy.qos import QoSProfile, qos_profile_sensor_data
 
 from builtin_interfaces.msg import Time
@@ -14,6 +14,9 @@ from std_srvs.srv import SetBool, Trigger
 
 from newtonian.modules.params import Parameters
 from newtonian.modules.physics.simulator import NewtonianSimulator
+
+
+_ROS_PARAMETERS = ("use_sim_time", "start_type_description_service")
 
 
 def _qos(item) -> QoSProfile:
@@ -26,7 +29,7 @@ def _qos(item) -> QoSProfile:
     raise ValueError(f"'{item.name}' must be 'default' or 'sensor_data'")
 
 
-class NewtonNode(Node):
+class NewtonianNode(Node):
     """
     """
     timer = None
@@ -49,7 +52,7 @@ class NewtonNode(Node):
         """
         """
         names = self.list_parameters([], 0).names
-        flat = {n: p.value for n, p in zip(names, self.get_parameters(names)) if n != "use_sim_time"}
+        flat = {n: p.value for n, p in zip(names, self.get_parameters(names)) if n not in _ROS_PARAMETERS}
         return Parameters(flat)
 
     def _teardown(self) -> None:
@@ -75,7 +78,7 @@ class NewtonNode(Node):
         viewer = old.viewer if old is not None else None
         try:
             sim = NewtonianSimulator(p=p, viewer=viewer)
-        except Exception as e:
+        except Exception:
             if old is not None and viewer is not None and viewer.sim is not old:
                 viewer.attach(sim=old)
             raise
@@ -136,7 +139,7 @@ class NewtonNode(Node):
             self._rebuild()
             response.success = True
         except Exception as e:
-            self.get_logger().error(f"rebuild failed")
+            self.get_logger().error("rebuild failed")
             response.success = False
             response.message = str(e)
         return response
@@ -161,14 +164,14 @@ def main(args=None) -> None:
     """
     """
     rclpy.init(args=args)
-    node = NewtonNode()
+    node = NewtonianNode()
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
         pass
     except rclpy.executors.ExternalShutdownException:
         pass
-    except Exception as e:
+    except Exception:
         if rclpy.ok():
             raise
     finally:

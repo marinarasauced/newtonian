@@ -101,7 +101,7 @@ class NewtonianViewer:
         gui = viewer.gui
         if gui is None:
             return
-        
+
         scale = gui.ui.dpi_scale
         bottom, width = self._ui_stats
 

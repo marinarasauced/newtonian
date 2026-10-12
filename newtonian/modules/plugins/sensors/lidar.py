@@ -9,6 +9,7 @@ import warp as wp
 from builtin_interfaces.msg import Time
 from sensor_msgs.msg import LaserScan
 
+from newtonian.modules.params import Parameters
 from newtonian.modules.plugins.sensors.base import SENSORS, Cache, SensorRaytrace, noise
 
 if TYPE_CHECKING:
@@ -20,10 +21,10 @@ class _Base(SensorRaytrace):
     """
     msg_type = LaserScan
 
-    def on_model(self, sim: NewtonianSimulator) -> None:
+    def __init__(self, name: str, p: Parameters) -> None:
         """
         """
-        p = self.p
+        super().__init__(name=name, p=p)
 
         self.samples = p.get_int(key="samples", default=1080, at_least=1)
         self.angle_min = p.get_float(key="angle_min", default=-2.356194)
@@ -32,6 +33,9 @@ class _Base(SensorRaytrace):
         self.range_max = p.get_float(key="range_max", default=30.0, above=0.0)
         self.noise_std = p.get_float(key="noise_std", default=0.0, at_least=0.0)
 
+    def on_model(self, sim: NewtonianSimulator) -> None:
+        """
+        """
         super().on_model(sim=sim)
 
         n = self.samples

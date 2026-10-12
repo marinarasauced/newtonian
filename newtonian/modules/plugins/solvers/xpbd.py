@@ -7,7 +7,7 @@ from newtonian.modules.plugins.solvers.base import SOLVERS, Solver
 
 
 @SOLVERS.register("xpbd")
-class SolverXBPD(Solver):
+class SolverXPBD(Solver):
     """
     """
     solver_cls = newton.solvers.SolverXPBD

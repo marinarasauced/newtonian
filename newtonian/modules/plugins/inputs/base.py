@@ -12,6 +12,7 @@ from newtonian.modules.plugins.base import Plugin
 
 if TYPE_CHECKING:
     from newtonian.modules.physics.simulator import NewtonianSimulator
+    from newtonian.modules.plugins.robots import Robot
 
 
 INPUTS: Registry = Registry("input")
@@ -36,7 +37,7 @@ class Input(Plugin):
         self.topic: str = p.get(key="topic", default=name)
 
         self.qos: str = p.get_choice(key="qos", choices=("default", "sensor_data"), default=self.default_qos)
-        self.qos_depth = p.get_int(key="qos_depth", default=10)
+        self.qos_depth = p.get_int(key="qos_depth", default=10, at_least=1)
         self.robot_name: str | None = p.get(key="robot", default=None)
         self.timeout = p.get_float(key="timeout", default=self.default_timeout, at_least=0.0)
         self._msg = None
@@ -60,7 +61,7 @@ class Input(Plugin):
             self._msg = None
             self.on_timeout(sim=sim)
             return
-        self.handle(sim, msg)
+        self.handle(sim=sim, msg=msg)
         self.robot.engage(sim=sim)
 
     def handle(self, sim: NewtonianSimulator, msg: Any) -> None:
@@ -68,12 +69,12 @@ class Input(Plugin):
         """
         raise NotImplementedError
 
-    def on_model(self, sim: NewtonianSimulator) -> None:
+    def on_build(self, sim: NewtonianSimulator, builder: newton.ModelBuilder) -> None:
         """
         """
-        super().on_model(sim=sim)
+        super().on_build(sim=sim, builder=builder)
 
-        self.robot = sim.robots.resolve(name=self.robot_name, caller=f"input '{self.name}'")
+        self.robot: Robot = sim.robots.resolve(name=self.robot_name, caller=f"input '{self.name}'")
 
     def on_timeout(self, sim: NewtonianSimulator) -> None:
         """
@@ -83,6 +84,6 @@ class Input(Plugin):
         """
         """
         super().reset()
-        
+
         self._msg = None
         self._msg_time = None

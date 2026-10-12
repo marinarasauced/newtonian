@@ -4,20 +4,17 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-import newton
 import numpy as np
 
 from builtin_interfaces.msg import Time
 from sensor_msgs.msg import JointState
 
 from newtonian.modules.arrays import host
+from newtonian.modules.plugins.robots.base import JOINT_TYPES
 from newtonian.modules.plugins.sensors.base import SENSORS, Cache, Sensor
 
 if TYPE_CHECKING:
     from newtonian.modules.physics.simulator import NewtonianSimulator
-
-
-_JOINT_TYPES = (int(newton.JointType.REVOLUTE), int(newton.JointType.PRISMATIC))
 
 
 @dataclass
@@ -37,12 +34,13 @@ class _Base(Sensor):
     def on_model(self, sim: NewtonianSimulator) -> None:
         """
         """
+        super().on_model(sim=sim)
         p = self.p
 
         joint_type = host(arr=sim.model.joint_type)
         joint_q_start = host(arr=sim.model.joint_q_start)
         joint_qd_start = host(arr=sim.model.joint_qd_start)
-        joints = [j for j in self.robot.find_joints(pattern=p.get(key="joints", default="*")) if joint_type[j] in _JOINT_TYPES]
+        joints = [j for j in self.robot.find_joints(pattern=p.get(key="joints", default="*")) if joint_type[j] in JOINT_TYPES]
         self.names = [self.robot.joints[j] for j in joints]
         self.joint_q_idx = joint_q_start[joints]
         self.joint_qd_idx = joint_qd_start[joints]

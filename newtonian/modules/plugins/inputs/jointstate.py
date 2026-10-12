@@ -6,18 +6,15 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 import math
-import newton
 
 from sensor_msgs.msg import JointState
 
 from newtonian.modules.arrays import host
 from newtonian.modules.plugins.inputs.base import INPUTS, Input
+from newtonian.modules.plugins.robots.base import JOINT_TYPES
 
 if TYPE_CHECKING:
     from newtonian.modules.physics.simulator import NewtonianSimulator
-
-
-_JOINT_TYPES = (int(newton.JointType.REVOLUTE), int(newton.JointType.PRISMATIC))
 
 
 @dataclass
@@ -43,7 +40,7 @@ class _Base(Input):
         joint_type = host(arr=sim.model.joint_type)
         joint_q_start = host(arr=sim.model.joint_q_start)
         joint_qd_start = host(arr=sim.model.joint_qd_start)
-        self.index: dict[str, tuple[int, int]] = {name: (int(joint_q_start[j]), int(joint_qd_start[j])) for j, name in self.robot.joints.items() if joint_type[j] in _JOINT_TYPES}
+        self.index: dict[str, tuple[int, int]] = {name: (int(joint_q_start[j]), int(joint_qd_start[j])) for j, name in self.robot.joints.items() if joint_type[j] in JOINT_TYPES}
 
     def _command(self, msg: JointState) -> _Command:
         """

@@ -10,11 +10,12 @@ import warp as wp
 from builtin_interfaces.msg import Time
 
 from newtonian.modules.arrays import host
-from newtonian.modules.params import Parameters
+from newtonian.modules.params import ParameterError, Parameters
 from newtonian.modules.registry import Registry
 from newtonian.modules.transforms import TRANSFORM_ROS_TO_GL, convert_pose_to_transform, tf_mul
 
 from newtonian.modules.plugins.base import Plugin
+from newtonian.modules.plugins.robots.base import shorthand
 
 if TYPE_CHECKING:
     from newtonian.modules.physics.simulator import NewtonianSimulator
@@ -42,7 +43,7 @@ class Sensor(Plugin):
         self.topic: str = p.get(key="topic", default=name)
         self.rate = p.get_float(key="rate", default=0.0, at_least=0.0)
 
-        self.qos: str = p.get(key="qos", default=self.default_qos)
+        self.qos: str = p.get_choice(key="qos", choices=("default", "sensor_data"), default=self.default_qos)
         self.qos_depth = p.get_int(key="qos_depth", default=10, at_least=1)
         self.robot_name: str | None = p.get(key="robot", default=None)
         self.frame_id: str = p.get(key="frame_id", default="")
@@ -97,9 +98,6 @@ class SensorFixed(Sensor):
         super().on_build(sim=sim, builder=builder)
         p = self.p
 
-        # robot assignment
-        self.robot_name = self.robot.name
-
         # site assignment if configured
         if "site" in p:
             self.site_label = p.get(key="site")
@@ -108,10 +106,10 @@ class SensorFixed(Sensor):
 
         # site assignment if not configured
         body_name = p.get(key="body", default=None)
-        prefix = self.robot_name + "/"
-        bodies = [i for i, label in enumerate(builder.body_label) if label.startswith(prefix) and (body_name is None or label.rsplit("/", 1)[-1] == body_name)]
+        prefix = self.robot.name + "/"
+        bodies = [i for i, label in enumerate(builder.body_label) if label.startswith(prefix) and (body_name is None or shorthand(label=label) == body_name)]
         if not bodies:
-            raise ValueError(f"sensor '{self.name}' is missing body {body_name!r} in robot '{self.robot_name}'")
+            raise ParameterError(f"{p.prefix}body {body_name!r} is not a body of robot '{self.robot.name}'")
         self.site_label = f"{self.name}_site"
         builder.add_site(body=bodies[0], xform=convert_pose_to_transform(pose=p.get(key="offset", default=None)), label=f"{prefix}{self.site_label}")
         self.frame_id = self.frame_id or self.name
@@ -145,10 +143,9 @@ class SensorRaytrace(SensorFixed):
 
         cfg = newton.sensors.SensorTiledCamera.RenderConfig()
         if "max_distance" in p or hasattr(self, "range_max"):
-            cfg.max_distance = float(p.get(key="max_distance", default=getattr(self, "range_max", 1000.0)))
+            cfg.max_distance = p.get_float(key="max_distance", default=getattr(self, "range_max", 1000.0), above=0.0)
 
         self.tracer = newton.sensors.SensorTiledCamera(model=sim.model, default_render_config=cfg)
-        sim.require_raytrace()
 
     def transform(self, sim: NewtonianSimulator, cache: Cache) -> wp.array2d:
         """

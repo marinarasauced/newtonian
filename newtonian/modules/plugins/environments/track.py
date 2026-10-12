@@ -1,14 +1,14 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import newton
 import numpy as np
 import warp as wp
 
+from PIL import Image
 import yaml
 
 from newtonian.modules.paths import resolve
@@ -23,23 +23,21 @@ class EnvironmentTrack(Environment):
     """
     """
 
-    def on_build(self, sim: NewtonianSimulator, builder: newton.ModelBuilder):
+    def on_build(self, sim: NewtonianSimulator, builder: newton.ModelBuilder) -> None:
         """
         """
         super().on_build(sim=sim, builder=builder)
         p = self.p
 
-        from PIL import Image
-
-        map = Path(resolve(uri=p.get(key="map")))
-        meta = yaml.safe_load(stream=map.read_text())
-        image = np.asarray(Image.open(map.parent / meta["image"]).convert("L"), dtype=np.float32) / 255.0
+        mapping = Path(resolve(uri=p.get(key="map")))
+        meta = yaml.safe_load(stream=mapping.read_text())
+        image = np.asarray(Image.open(mapping.parent / meta["image"]).convert("L"), dtype=np.float32) / 255.0
         occ = image if meta.get("negate", 0) else 1.0 - image
         occupied = occ > float(meta.get("occupied_thresh", 0.65))
 
         res = float(meta["resolution"])
         ox, oy = float(meta["origin"][0]), float(meta["origin"][1])
-        height = float(p.get_float(key="wall_height", default=0.3, above=0.0))
+        height = p.get_float(key="wall_height", default=0.3, above=0.0)
 
         rectangles = []
         rows, cols = occupied.shape

@@ -31,6 +31,8 @@ DRIVE_MODES = {
     "effort": newton.JointTargetMode.EFFORT,
 }
 
+JOINT_TYPES = (int(newton.JointType.REVOLUTE), int(newton.JointType.PRISMATIC))
+
 _DRIVE_FIELDS = {
     "ke": "joint_target_ke",
     "kd": "joint_target_kd",

@@ -64,7 +64,7 @@ class _Base(Input):
         self.steer = {side: int(joint_q_start[self.robot.find_joints(pattern=n)[0]]) for side, n in self.joints_steering.items()}
         self.wheels = {role: int(joint_qd_start[self.robot.find_joints(pattern=n)[0]]) for role, n in self.joints_wheels.items()}
 
-    def _command(self, sim: NewtonianSimulator, msg: Twist) -> _Command:
+    def _command(self, msg: Twist) -> _Command:
         """
         """
         v = msg.linear.x
@@ -131,7 +131,7 @@ class InputRacecar(_Base):
     def handle(self, sim: NewtonianSimulator, msg: Twist) -> None:
         """
         """
-        self.cmd_target = self._command(sim=sim, msg=msg)
+        self.cmd_target = self._command(msg=msg)
 
     def on_timeout(self, sim: NewtonianSimulator) -> None:
         """

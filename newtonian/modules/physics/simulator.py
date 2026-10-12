@@ -6,13 +6,14 @@ import numpy as np
 import warp as wp
 
 from newtonian.modules.arrays import host, need
-from newtonian.modules.params import Parameters
+from newtonian.modules.params import ParameterError, Parameters
 
 from newtonian.modules.physics.viewer import NewtonianViewer
 
+from newtonian.modules.plugins.base import Plugin
 from newtonian.modules.plugins.environments import ENVIRONMENTS, Environment
 from newtonian.modules.plugins.inputs import INPUTS, Input
-from newtonian.modules.plugins.robots import ROBOTS, Robot, Robots
+from newtonian.modules.plugins.robots import ROBOTS, Robots
 from newtonian.modules.plugins.sensors import SENSORS, Sensor, update_sensors
 from newtonian.modules.plugins.solvers import SOLVERS
 
@@ -55,7 +56,7 @@ class NewtonianSimulator:
         s.check_keys(allowed=("device", "substeps", "frame_rate", "real_time_factor", "gravity", "viewer", "cuda_graph", "seed"))
 
         # warp device
-        self.device = wp.get_device(s.get("device", None))
+        self.device = wp.get_device(s.get(key="device", default=None))
 
         # timing
         self.substeps = s.get_int(key="substeps", default=2, at_least=1)
@@ -70,7 +71,7 @@ class NewtonianSimulator:
         # random number generator
         self.rng = np.random.default_rng(s.get_int(key="seed", default=42))
 
-        # build
+        # build state
         self.frame = 0
         self.graph: wp.Graph | None = None
         self.viewer: NewtonianViewer | None = None
@@ -79,12 +80,11 @@ class NewtonianSimulator:
 
         # sensors
         self._needs_contacts = False
-        self._needs_raytrace = False
 
         # simulation
         self._is_paused = False
 
-        # graph capture
+        # build
         with wp.ScopedDevice(device=self.device):
             self._build(viewer=viewer)
 
@@ -95,7 +95,7 @@ class NewtonianSimulator:
         p = self.p
 
         # setup
-        solver_type = p.get("solver.type", "mujoco")
+        solver_type = p.get_choice(key="solver.type", choices=SOLVERS.names(), default="mujoco")
         self.solver_plugin = SOLVERS.get(solver_type)(p.subtree(f"solver.{solver_type}").as_kwargs())
         scene = newton.ModelBuilder(gravity=(0.0, 0.0, self.gravity))
         self.solver_plugin.before_build(scene)
@@ -106,7 +106,7 @@ class NewtonianSimulator:
         # plugins (robots)
         self.robots = Robots((n, ROBOTS.get(q.get("type"))(n, q)) for n, q in p.entries("robots"))
         if len(self.robots) > 1:
-            raise ValueError(f"{len(self.robots)} robots configured exceeds current supported limit of one robot per sim")
+            raise ParameterError(f"robots has {len(self.robots)} entries but only one robot per sim is supported")
 
         # plugins (inputs)
         self.inputs: list[Input] = [INPUTS.get(q.get("type"))(n, q) for n, q in p.entries("inputs")]
@@ -115,20 +115,20 @@ class NewtonianSimulator:
         self.sensors: list[Sensor] = [SENSORS.get(q.get("type"))(n, q) for n, q in p.entries("sensors")]
 
         # plugins
-        plugins: tuple[Environment | Robot | Input | Sensor, ...] = (*self.environments, *self.robots.values(), *self.inputs, *self.sensors)
-        for item in plugins:
-            item.on_build(self, scene)
+        self.plugins: tuple[Plugin, ...] = (*self.environments, *self.robots.values(), *self.inputs, *self.sensors)
+        for item in self.plugins:
+            item.on_build(sim=self, builder=scene)
         self.solver_plugin.before_finalize(scene)
         self.model = scene.finalize()
-        for item in plugins:
+        for item in self.plugins:
             item.on_model(sim=self)
 
         # validation of solvers
         if self._needs_contacts and not self.solver_plugin.reports_contact_forces:
-            raise ValueError(f"solver must report contact forces for contact sensors")
+            raise ParameterError(f"solver.type '{solver_type}' does not report contact forces, which contact sensors need")
 
         if not self.solver_plugin.supports_lazy_drives and any(len(r._lazy_dofs) for r in self.robots.values()):
-            raise ValueError(f"lazy drives are not supported by solver '{p.get('solver.type')}'")
+            raise ParameterError(f"solver.type '{solver_type}' does not support lazy drives")
 
         # build solver
         self.solver = self.solver_plugin.create(self.model)
@@ -155,7 +155,7 @@ class NewtonianSimulator:
         if self.viewer_type == "gl":
             self.viewer = viewer.attach(sim=self) if viewer is not None else NewtonianViewer(sim=self)
 
-        # builds CUDA graph
+        # build CUDA graph
         self._capture()
 
     def _capture(self) -> None:
@@ -200,7 +200,7 @@ class NewtonianSimulator:
 
         # update contacts through plugin
         if self._needs_contacts and self.contacts is not None:
-            self.solver_plugin.update_contacts(self.solver, self.contacts, self.state_0)
+            self.solver_plugin.update_contacts(solver=self.solver, contacts=self.contacts, state=self.state_0)
 
     def _restore(self) -> None:
         """
@@ -258,9 +258,8 @@ class NewtonianSimulator:
         self.buffers.joint_f[:] = joint_f
         self.buffers.write(control=self.control)
 
-        # lazy plugins
-        items: tuple[Environment | Robot | Input | Sensor, ...] = (*self.environments, *self.robots.values(), *self.inputs, *self.sensors)
-        for item in items:
+        # plugins
+        for item in self.plugins:
             item.reset()
         self.frame = 0
 
@@ -269,12 +268,6 @@ class NewtonianSimulator:
         Called by contact sensors in 'on_model' to allocate contacts and compute forces.
         """
         self._needs_contacts = True
-
-    def require_raytrace(self) -> None:
-        """
-        Called by ray tracing sensor in 'on_model'.
-        """
-        self._needs_raytrace = True
 
     def sense(self) -> list[Sensor]:
         """
@@ -309,14 +302,14 @@ class NewtonianSimulator:
         Steps the physics safely.
         """
         # apply inputs
-        for input in self.inputs:
-            input.control(sim=self)
+        for item in self.inputs:
+            item.control(sim=self)
 
         # write targets to device
         if self.buffers.dirty:
             self.buffers.write(control=self.control)
 
-        # launch graph
+        # simulate one frame
         with wp.ScopedDevice(device=self.device):
             if self.graph is not None:
                 wp.capture_launch(graph=self.graph)

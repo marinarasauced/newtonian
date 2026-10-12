@@ -4,9 +4,11 @@ imgui_bundle==1.92.900
 mujoco==3.12.0
 mujoco_warp==3.12.0
 newton==1.6.1
+numpy==2.5.3
 osrf_pycommon==2.0.2
 pillow==12.3.0
-pyglet==2.1.6
+pyglet==2.1.16
+pyyaml==6.0.3
 scipy==1.18.1
 trimesh==5.1.1
 typing_extensions==4.16.0

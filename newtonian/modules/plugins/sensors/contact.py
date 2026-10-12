@@ -9,7 +9,7 @@ import numpy as np
 from builtin_interfaces.msg import Time
 from geometry_msgs.msg import WrenchStamped
 
-from newtonian.modules.arrays import host, need
+from newtonian.modules.arrays import host
 from newtonian.modules.plugins.sensors.base import SENSORS, Cache, Sensor
 
 if TYPE_CHECKING:
@@ -24,6 +24,7 @@ class _Base(Sensor):
     def on_model(self, sim: NewtonianSimulator) -> None:
         """
         """
+        super().on_model(sim=sim)
         p = self.p
 
         bodies = self.robot.find_bodies(pattern=p.get(key="bodies"))
@@ -35,7 +36,7 @@ class _Base(Sensor):
         """
         """
         if sim.contacts is None:
-            raise ValueError(f"sensor cannot update when contacts are missing")
+            raise ValueError("sensor cannot update when contacts are missing")
         self.sensor.update(state=sim.state, contacts=sim.contacts)
         self.data = host(arr=self.sensor.total_force).sum(axis=0)
 
@@ -76,5 +77,5 @@ class SensorContactScalar(_Base):
         msg.wrench.force.x = 0.0
         msg.wrench.force.y = 0.0
         msg.wrench.force.z = float(np.linalg.norm(self.data))
-        
+
         return msg

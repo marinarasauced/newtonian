@@ -13,6 +13,7 @@ def convert_pose_to_transform(pose) -> wp.transform:
     q = wp.quat_rpy(roll=roll, pitch=pitch, yaw=yaw)
     return wp.transform(wp.vec3(x, y, z), q)
 
+
 def quat_rotate(quat: np.ndarray, vec: np.ndarray) -> np.ndarray:
     """
     """
@@ -20,12 +21,14 @@ def quat_rotate(quat: np.ndarray, vec: np.ndarray) -> np.ndarray:
     t = 2.0 * np.cross(u, vec)
     return vec + w * t + np.cross(u, t)
 
+
 def quat_rotate_inv(quat: np.ndarray, vec: np.ndarray) -> np.ndarray:
     """
     """
     q = quat.copy()
     q[..., :3] *= -1.0
     return quat_rotate(quat=q, vec=vec)
+
 
 def quat_mul(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     """
@@ -38,6 +41,7 @@ def quat_mul(a: np.ndarray, b: np.ndarray) -> np.ndarray:
         aw * bz + ax * by - ay * bx + az * bw,
         aw * bw - ax * bx - ay * by - az * bz,
     ])
+
 
 def tf_mul(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     """

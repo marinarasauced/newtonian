@@ -32,7 +32,7 @@ class ParameterError(ValueError):
 class Parameters:
     """
     """
-    
+
     def __init__(self, flat: dict[str, Any] | None = None, prefix: str = "") -> None:
         """
         """
@@ -86,12 +86,12 @@ class Parameters:
 
     def get(self, key: str, default: Any = _MISSING) -> Any:
         """
-        Returns the value of 'key', and raises 'KeyError' if 'key' is missing.
+        Returns the value of 'key', and raises 'ParameterError' if 'key' is missing.
         """
         value = self._flat.get(key, default)
         if value is _MISSING:
             where = f"{self.prefix}{key}"
-            raise KeyError(f"missing required parameter '{where}'")
+            raise ParameterError(f"{where} is required but missing")
         if isinstance(value, tuple):
             value = list(value)
         return value
@@ -103,7 +103,7 @@ class Parameters:
         if isinstance(value, bool) or not isinstance(value, (int, float)) or value != int(value):
             raise ParameterError(f"{self.prefix}{key} expected an integer but got {value!r}")
         if at_least is not None and value < at_least:
-            raise ParameterError(f"{self.prefix}{key} exepceted a value at least {at_least} but got {value!r}")
+            raise ParameterError(f"{self.prefix}{key} expected a value at least {at_least} but got {value!r}")
         return int(value)
 
     def get_float(self, key: str, default: Any = _MISSING, above: float | None = None, at_least: float | None = None) -> float:
@@ -113,9 +113,9 @@ class Parameters:
         if isinstance(value, bool) or not isinstance(value, (int, float)):
             raise ParameterError(f"{self.prefix}{key} expected a number but got {value!r}")
         if above is not None and not value > above:
-            raise ParameterError(f"{self.prefix}{key} exepceted a value above {above} but got {value!r}")
+            raise ParameterError(f"{self.prefix}{key} expected a value above {above} but got {value!r}")
         if at_least is not None and not value >= at_least:
-            raise ParameterError(f"{self.prefix}{key} exepceted a value at least {at_least} but got {value!r}")
+            raise ParameterError(f"{self.prefix}{key} expected a value at least {at_least} but got {value!r}")
         return float(value)
 
     def get_choice(self, key: str, choices: Iterable[str], default: Any = _MISSING) -> str:
@@ -132,7 +132,7 @@ class Parameters:
         """
         value = self.get(key=key, default=default)
         if not isinstance(value, bool):
-            raise ParameterError(f"{self.prefix}{key} exepceted true or false but got {value!r}")
+            raise ParameterError(f"{self.prefix}{key} expected true or false but got {value!r}")
         return value
 
     def subtree(self, key: str) -> Parameters:

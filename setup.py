@@ -32,7 +32,7 @@ setup(
     maintainer='Marina NELSON',
     maintainer_email='marinarasauced@outlook.com',
     description='Newton simulator with runtime configuration wrapped for ROS 2.',
-    license='MIT license',
+    license='MIT',
     extras_require={
         'test': [
             'pytest',

@@ -32,8 +32,8 @@ class Environment(Plugin):
         super().__init__(name=name, p=p)
 
         color = p.get(key="color", default=self.default_color)
-        if len(color) != 3:
-            raise ParameterError(f"{p.prefix} expected [r, g, b] but got '{color!r}'")
+        if not isinstance(color, list) or len(color) != 3 or not all(isinstance(c, (int, float)) for c in color):
+            raise ParameterError(f"{p.prefix}color expected [r, g, b] but got {color!r}")
         self.color: tuple[float, float, float] = (float(color[0]), float(color[1]), float(color[2]))
 
     def on_build(self, sim: NewtonianSimulator, builder: newton.ModelBuilder) -> None:
@@ -45,5 +45,5 @@ class Environment(Plugin):
         cfg = builder.default_shape_cfg.copy()
         for key in ("mu", "restitution", "ke", "kd", "kf", "margin"):
             if key in p:
-                setattr(cfg, key, float(p.get(key)))
+                setattr(cfg, key, p.get_float(key=key, at_least=0.0))
         self.cfg = cfg

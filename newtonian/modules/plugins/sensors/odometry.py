@@ -34,6 +34,7 @@ class _Base(Sensor):
     def on_model(self, sim: NewtonianSimulator) -> None:
         """
         """
+        super().on_model(sim=sim)
         p = self.p
 
         self.body = self.robot.find_body(name=p.get(key="body", default=None))
