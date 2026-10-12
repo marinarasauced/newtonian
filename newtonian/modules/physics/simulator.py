@@ -310,7 +310,7 @@ class NewtonianSimulator:
         """
         # apply inputs
         for input in self.inputs:
-            input.apply(sim=self)
+            input.control(sim=self)
 
         # write targets to device
         if self.buffers.dirty:

@@ -1,0 +1,85 @@
+
+from __future__ import annotations
+
+from collections.abc import Sequence
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
+import math
+import newton
+
+from sensor_msgs.msg import JointState
+
+from newtonian.modules.arrays import host
+from newtonian.modules.plugins.inputs.base import INPUTS, Input
+
+if TYPE_CHECKING:
+    from newtonian.modules.physics.simulator import NewtonianSimulator
+
+
+_JOINT_TYPES = (int(newton.JointType.REVOLUTE), int(newton.JointType.PRISMATIC))
+
+
+@dataclass
+class _Command:
+    """
+    """
+    names: list[str]
+    position: list[float | None]
+    velocity: list[float | None]
+    effort: list[float | None]
+
+
+class _Base(Input):
+    """
+    """
+    msg_type = JointState
+
+    def on_model(self, sim: NewtonianSimulator) -> None:
+        """
+        """
+        super().on_model(sim=sim)
+
+        joint_type = host(arr=sim.model.joint_type)
+        joint_q_start = host(arr=sim.model.joint_q_start)
+        joint_qd_start = host(arr=sim.model.joint_qd_start)
+        self.index: dict[str, tuple[int, int]] = {name: (int(joint_q_start[j]), int(joint_qd_start[j])) for j, name in self.robot.joints.items() if joint_type[j] in _JOINT_TYPES}
+
+    def _command(self, msg: JointState) -> _Command:
+        """
+        """
+        def values(items: Sequence[float]) -> list[float | None]:
+            return [float(items[i]) if i < len(items) and math.isfinite(items[i]) else None for i in range(len(msg.name))]
+        return _Command(
+            names=list(msg.name),
+            position=values(items=msg.position),
+            velocity=values(items=msg.velocity),
+            effort=values(items=msg.effort),
+        )
+
+    def _write(self, sim: NewtonianSimulator, command: _Command) -> None:
+        """
+        """
+        for name, position, velocity, effort in zip(command.names, command.position, command.velocity, command.effort):
+            idx = self.index.get(name)
+            if idx is None:
+                continue
+            q_idx, qd_idx = idx
+            if position is not None:
+                sim.buffers.joint_target_q[q_idx] = position
+            if velocity is not None:
+                sim.buffers.joint_target_qd[qd_idx] = velocity
+            if effort is not None:
+                sim.buffers.joint_f[qd_idx] = effort
+        sim.buffers.dirty = True
+
+
+@INPUTS.register("jointstate")
+class InputJointState(_Base):
+    """
+    """
+
+    def handle(self, sim: NewtonianSimulator, msg: JointState) -> None:
+        """
+        """
+        self._write(sim=sim, command=self._command(msg=msg))

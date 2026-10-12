@@ -1,6 +1,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 import math
@@ -8,81 +9,86 @@ import math
 from geometry_msgs.msg import Twist
 
 from newtonian.modules.arrays import host
-from newtonian.modules.params import Parameters
+from newtonian.modules.params import Parameters, ParameterError
 from newtonian.modules.plugins.inputs.base import INPUTS, Input
 
 if TYPE_CHECKING:
     from newtonian.modules.physics.simulator import NewtonianSimulator
 
 
-@INPUTS.register("racecar")
-class InputRacecar(Input):
+_STEERING = ("left", "right")
+_WHEELS = ("front_left", "front_right", "rear_left", "rear_right")
+
+
+@dataclass
+class _Command:
+    """
+    """
+    v: float = 0.0
+    delta: float = 0.0
+
+
+class _Base(Input):
+    """
+    """
     msg_type = Twist
+    default_timeout = 0.5
 
     def __init__(self, name: str, p: Parameters) -> None:
+        """
+        """
         super().__init__(name=name, p=p)
 
-        self.L = float(p.get("wheelbase", 0.33))
-        self.T = float(p.get("track", 0.24))
-        self.r = float(p.get("wheel_radius", 0.05))
-        self.max_steer = float(p.get("max_steer", 0.4189))
-        self.max_speed = float(p.get("max_speed", 10.0))
-        self.max_accel = float(p.get("max_accel", 3.0))
-        self.max_decel = float(p.get("max_decel", 6.0))
-        self.max_steer_rate = float(p.get("max_steer_rate", 3.0))
-        self._v = 0.0
-        self._delta = 0.0
-        self._goal = (0.0, 0.0)
+        self.wheelbase = p.get_float(key="wheelbase", default=0.33, above=0.0)
+        self.track = p.get_float(key="track", default=0.24, above=0.0)
+        self.wheel_radius = p.get_float(key="wheel_radius", default=0.05, above=0.0)
+        self.max_steer = p.get_float(key="max_steer", default=0.4189, above=0.0)
+        self.max_speed = p.get_float(key="max_speed", default=10.0, above=0.0)
+        self.max_accel = p.get_float(key="max_accel", default=3.0, above=0.0)
+        self.max_decel = p.get_float(key="max_decel", default=6.0, above=0.0)
+        self.max_steer_rate = p.get_float(key="max_steer_rate", default=3.0, above=0.0)
 
-        if "timeout" not in p:
-            self.timeout = 0.5
+        self.joints_steering: dict[str, str] = p.subtree(key="steer_joints").as_kwargs()
+        self.joints_wheels: dict[str, str] = p.subtree(key="wheel_joints").as_kwargs()
 
-    def _command(self, msg) -> tuple[float, float]:
-        v = msg.linear.x
-        if abs(v) < 1.0e-3:
-            return v, 0.0
-        return v, math.atan(self.L * msg.angular.z / v)
+        _check_keys(keys=self.joints_steering, allowed=_STEERING, where=f"{p.prefix}steer_joints")
+        _check_keys(keys=self.joints_wheels, allowed=_WHEELS, where=f"{p.prefix}wheel_joints")
 
     def on_model(self, sim: NewtonianSimulator) -> None:
+        """
+        """
         super().on_model(sim=sim)
-        q_start = host(arr=sim.model.joint_q_start)
-        qd_start = host(arr=sim.model.joint_qd_start)
 
-        def joint(name):
-            return self.robot.find_joints(name)[0]
+        joint_q_start = host(arr=sim.model.joint_q_start)
+        joint_qd_start = host(arr=sim.model.joint_qd_start)
+        self.steer = {side: int(joint_q_start[self.robot.find_joints(pattern=n)[0]]) for side, n in self.joints_steering.items()}
+        self.wheels = {role: int(joint_qd_start[self.robot.find_joints(pattern=n)[0]]) for role, n in self.joints_wheels.items()}
 
-        steer = self.p.subtree("steer_joints").as_kwargs()
-        wheels = self.p.subtree("wheel_joints").as_kwargs()
-        self.steer = {side: int(q_start[joint(n)]) for side, n in steer.items()}
-        self.wheels = {role: int(qd_start[joint(n)]) for role, n in wheels.items()}
+    def _command(self, sim: NewtonianSimulator, msg: Twist) -> _Command:
+        """
+        """
+        v = msg.linear.x
+        delta = 0.0 if abs(v) < 1.0e-3 else math.atan(self.wheelbase * msg.angular.z / v)
+        return _Command(
+            v=max(-self.max_speed, min(self.max_speed, v)),
+            delta=max(-self.max_steer, min(self.max_steer, delta)),
+        )
 
-        for side in self.steer:
-            if side not in ("left", "right"):
-                raise ValueError(f"input '{self.name}' must be 'left' / 'right'")
-        for role in self.wheels:
-            if role not in ("front_left", "front_right", "rear_left", "rear_right"):
-                raise ValueError(f"input '{self.name}' wheel_joints keys must be in ('front_left', 'front_right', 'rear_left', 'rear_right')")
-
-    def on_timeout(self, sim) -> None:
-        self._goal = (0.0, 0.0)
-
-    def handle(self, sim, msg) -> None:
-        v, delta = self._command(msg)
-        v = max(-self.max_speed, min(self.max_speed, v))
-        delta = max(-self.max_steer, min(self.max_steer, delta))
-        self._goal = (v, delta)
-
-    def _set(self, sim: NewtonianSimulator, v: float, delta: float) -> None:
-        L, half = self.L, self.T / 2.0
-        angles: dict[str, float]
-        speeds: dict[str, float]
+    def _write(self, sim: NewtonianSimulator, command: _Command) -> None:
+        """
+        """
+        v, delta = command.v, command.delta
+        L, half = self.wheelbase, self.track / 2
         if abs(delta) < 1.0e-4:
-            angles = {"left": delta, "right": delta}
-            speeds = {role: v for role in ("front_left", "front_right", "rear_left", "rear_right")}
+            angles = {side: delta for side in _STEERING}
+            speeds = {role: v for role in _WHEELS}
         else:
             R = L / math.tan(delta)
-            angles = {"left": math.atan(L / (R - half)), "right": math.atan(L / (R + half))}
             w = v / R
+            angles = {
+                "left": math.atan(L / (R - half)),
+                "right": math.atan(L / (R + half)),
+            }
             speeds = {
                 "front_left": math.copysign(1.0, R) * w * math.hypot(L, R - half),
                 "front_right": math.copysign(1.0, R) * w * math.hypot(L, R + half),
@@ -92,22 +98,60 @@ class InputRacecar(Input):
         for side, q in self.steer.items():
             sim.buffers.joint_target_q[q] = angles[side]
         for role, qd in self.wheels.items():
-            sim.buffers.joint_target_qd[qd] = speeds[role] / self.r
+            sim.buffers.joint_target_qd[qd] = speeds[role] / self.wheel_radius
         sim.buffers.dirty = True
 
-    def reset(self) -> None:
-        super().reset()
-        self._v = 0.0
-        self._delta = 0.0
-        self._goal = (0.0, 0.0)
 
-    def apply(self, sim: NewtonianSimulator) -> None:
-        super().apply(sim)
-        v, delta = self._goal
-        if v == self._v and delta == self._delta:
+@INPUTS.register("racecar")
+class InputRacecar(_Base):
+    """
+    """
+
+    def __init__(self, name: str, p: Parameters) -> None:
+        """
+        """
+        super().__init__(name=name, p=p)
+
+        self.cmd_target = _Command()
+        self.cmd = _Command()
+
+    def control(self, sim: NewtonianSimulator) -> None:
+        """
+        """
+        super().control(sim=sim)
+
+        if self.cmd_target == self.cmd:
             return
         dt = sim.frame_dt
-        rate = self.max_accel if abs(v) > abs(self._v) and v * self._v >= 0.0 else self.max_decel
-        self._v += max(-rate * dt, min(rate * dt, v - self._v))
-        self._delta += max(-self.max_steer_rate * dt, min(self.max_steer_rate * dt, delta - self._delta))
-        self._set(sim, self._v, self._delta)
+        rate = self.max_accel if abs(self.cmd_target.v) > abs(self.cmd.v) and self.cmd_target.v * self.cmd.v >= 0.0 else self.max_accel
+        self.cmd.v += max(-rate * dt, min(rate * dt, self.cmd_target.v - self.cmd.v))
+        self.cmd.delta += max(-self.max_steer_rate * dt, min(self.max_steer_rate * dt, self.cmd_target.delta - self.cmd.delta))
+        self._write(sim=sim, command=self.cmd)
+
+    def handle(self, sim: NewtonianSimulator, msg: Twist) -> None:
+        """
+        """
+        self.cmd_target = self._command(sim=sim, msg=msg)
+
+    def on_timeout(self, sim: NewtonianSimulator) -> None:
+        """
+        """
+        super().on_timeout(sim=sim)
+
+        self.cmd_target = _Command()
+
+    def reset(self) -> None:
+        """
+        """
+        super().reset()
+
+        self.cmd_target = _Command()
+        self.cmd = _Command()
+
+
+def _check_keys(keys: dict[str, str], allowed: tuple[str, ...], where: str) -> None:
+    """
+    """
+    unknown = sorted(set(keys) - set(allowed))
+    if unknown:
+        raise ParameterError(f"{where} expected keys in {list(allowed)} but got {unknown}")

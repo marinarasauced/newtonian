@@ -1,5 +1,5 @@
 
 from .base import INPUTS, Input
-from . import quadruped, racecar
+from . import jointstate, racecar
 
 __all__ = ["INPUTS", "Input"]

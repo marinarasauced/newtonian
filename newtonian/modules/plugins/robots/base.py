@@ -74,13 +74,13 @@ class Robot:
         """
         prefix = self.name + "/"
 
-        def own(labels):
+        def own(labels: list[str]) -> dict[int, str]:
             return {i: shorthand(l) for i, l in enumerate(labels) if l.startswith(prefix)}
 
         model = sim.model
-        self.joints = own(model.joint_label)
-        self.bodies = own(model.body_label)
-        self.shapes = own(model.shape_label)
+        self.joints: dict[int, str] = own(model.joint_label)
+        self.bodies: dict[int, str] = own(model.body_label)
+        self.shapes: dict[int, str] = own(model.shape_label)
         if not self.bodies:
             raise ValueError(f"robot '{self.name}' has no bodies in the model")
         self.root = min(self.bodies)
