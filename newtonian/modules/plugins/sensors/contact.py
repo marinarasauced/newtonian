@@ -26,8 +26,7 @@ class _Base(Sensor):
         """
         p = self.p
 
-        robot = self.robot(sim=sim)
-        bodies = robot.find_bodies(pattern=p.get(key="bodies"))
+        bodies = self.robot.find_bodies(pattern=p.get(key="bodies"))
         self.sensor = newton.sensors.SensorContact(model=sim.model, sensing_bodies=bodies)
         self.frame_id = self.frame_id or "world"
         sim.require_contacts()

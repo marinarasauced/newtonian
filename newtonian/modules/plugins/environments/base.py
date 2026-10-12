@@ -39,6 +39,7 @@ class Environment(Plugin):
     def on_build(self, sim: NewtonianSimulator, builder: newton.ModelBuilder) -> None:
         """
         """
+        super().on_build(sim=sim, builder=builder)
         p = self.p
 
         cfg = builder.default_shape_cfg.copy()

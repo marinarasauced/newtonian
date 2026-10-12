@@ -37,10 +37,9 @@ class _Base(Sensor):
         """
         p = self.p
 
-        robot = self.robot(sim=sim)
-        self.body = robot.body(name=p.get(key="body", default=None))
+        self.body = self.robot.body(name=p.get(key="body", default=None))
         self.frame_id = self.frame_id or "odom"
-        self.child_frame_id = p.get(key="child_frame_id", default=robot.bodies[self.body])
+        self.child_frame_id = p.get(key="child_frame_id", default=self.robot.bodies[self.body])
         self.com = host(arr=sim.model.body_com)[self.body].astype(np.float64)
         self.pose_std = p.get_float(key="pose_noise_std", default=0.0, at_least=0.0)
         self.twist_std = p.get_float(key="twist_noise_std", default=0.0, at_least=0.0)

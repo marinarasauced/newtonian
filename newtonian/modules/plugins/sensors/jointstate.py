@@ -40,12 +40,11 @@ class _Base(Sensor):
         """
         p = self.p
 
-        robot = self.robot(sim=sim)
         joint_type = host(arr=sim.model.joint_type)
         joint_q_start = host(arr=sim.model.joint_q_start)
         joint_qd_start = host(arr=sim.model.joint_qd_start)
-        joints = [j for j in robot.find_joints(pattern=p.get(key="joints", default="*")) if joint_type[j] in _JOINT_TYPES]
-        self.names = [robot.joints[j] for j in joints]
+        joints = [j for j in self.robot.find_joints(pattern=p.get(key="joints", default="*")) if joint_type[j] in _JOINT_TYPES]
+        self.names = [self.robot.joints[j] for j in joints]
         self.joint_q_idx = joint_q_start[joints]
         self.joint_qd_idx = joint_qd_start[joints]
 

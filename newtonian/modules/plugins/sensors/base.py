@@ -72,6 +72,8 @@ class Sensor(Plugin):
         """
         Resets the due update schedule.
         """
+        super().reset()
+
         self._due_time = 0.0
 
     def to_msg(self, stamp: Time) -> Any:
@@ -117,6 +119,8 @@ class SensorFixed(Sensor):
     def on_model(self, sim: NewtonianSimulator) -> None:
         """
         """
+        super().on_model(sim=sim)
+
         self.site = self.robot.find_shapes(pattern=self.site_label)[0]
         self.body = int(host(arr=sim.model.shape_body)[self.site])
         self.offset = host(arr=sim.model.shape_transform)[self.site].astype(np.float64)
