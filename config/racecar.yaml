@@ -6,21 +6,22 @@ newtonian:
       cuda_graph: true
       device: "cuda:0"                  # 'cpu' | 'cuda:0'
       viewer: "gl"                      # 'gl' | 'none'
-      substeps: 4                       # n % 2 == 0, n > 0
+      substeps: 4
       frame_rate: 45.0
       real_time_factor: 1.0
 
     solver:
       type: "mujoco"                    # 'featherstone' | 'kamino' | 'mujoco' | 'xpbd'
 
-      mujoco:                           # 'mujoco' settings
+      mujoco:
         iterations: 50
         ls_iterations: 50
         cone: "elliptic"
         impratio: 10.0
 
-      xpbd:                             # 'xpbd' settings
-        iterations: 4
+      # 'featherstone' stable only for large substeps
+      # 'kamino' not recommended for racecar
+      # 'xpbd' not supported for racecar
 
     environments:                       # multiple environments supported
       ground: {type: "default", "mu": 1.0}
@@ -31,7 +32,7 @@ newtonian:
         type: "mjcf"                    # 'mjcf' | 'urdf' | 'usd'
         file: package://newtonian/descriptions/racecar.xml
         pose: [0.0, -3.0, 0.0, 0.0, 0.0, 0.0]
-        floating: true
+        floating: true                  # default for floating base robot
         loader_args:
           enable_self_collisions: false
           force_show_colliders: true    # required for ui
@@ -40,15 +41,14 @@ newtonian:
           steering: {joints: "*_steer_joint", mode: "position", ke: 20.0, kd: 0.5}
 
     inputs:
-      rc:                               # name of input (in case of multiple)
+      racecar:                          # name of input (in case of multiple)
         type: "racecar"
-        msg: "twist"
         topic: "/racecar/control"
-        wheelbase: 0.33
-        track: 0.24
         wheel_radius: 0.05
+        wheelbase: 0.33
         max_speed: 8.0
         timeout: 0.5
+        track: 0.24
         steer_joints: {left: "front_left_steer_joint", right: "front_right_steer_joint"}
         wheel_joints:
           front_left: "front_left_wheel_joint"
