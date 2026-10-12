@@ -18,7 +18,7 @@ ENVIRONMENTS: Registry = Registry("environment")
 
 
 
-# --- Environment Plugins -------------------------------------------------------------
+# --- Environment Plugins --------------------------------------------------------
 
 
 class Environment(Plugin):

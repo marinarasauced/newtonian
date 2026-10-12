@@ -61,17 +61,18 @@ class Sensor(Plugin):
         self._due_time = max(self._due_time + period, sim_time + period * 0.5)
         return True
 
+    def on_build(self, sim: NewtonianSimulator, builder: newton.ModelBuilder) -> None:
+        """
+        """
+        super().on_build(sim=sim, builder=builder)
+
+        self.robot: Robot = sim.robots.resolve(name=self.robot_name, caller=f"sensor '{self.name}'")
+
     def reset(self) -> None:
         """
         Resets the due update schedule.
         """
         self._due_time = 0.0
-
-    def robot(self, sim: NewtonianSimulator) -> Robot:
-        """
-        Returns the robot that this sensor belongs to.
-        """
-        return sim.robots.resolve(name=self.robot_name, caller=f"sensor '{self.name}'")
 
     def to_msg(self, stamp: Time) -> Any:
         """
@@ -91,11 +92,11 @@ class SensorFixed(Sensor):
     def on_build(self, sim: NewtonianSimulator, builder: newton.ModelBuilder) -> None:
         """
         """
+        super().on_build(sim=sim, builder=builder)
         p = self.p
 
         # robot assignment
-        robot = self.robot(sim=sim).name
-        self.robot_name = robot
+        self.robot_name = self.robot.name
 
         # site assignment if configured
         if "site" in p:
@@ -105,10 +106,10 @@ class SensorFixed(Sensor):
 
         # site assignment if not configured
         body_name = p.get(key="body", default=None)
-        prefix = robot + "/"
+        prefix = self.robot_name + "/"
         bodies = [i for i, label in enumerate(builder.body_label) if label.startswith(prefix) and (body_name is None or label.rsplit("/", 1)[-1] == body_name)]
         if not bodies:
-            raise ValueError(f"sensor '{self.name}' is missing body {body_name!r} in robot '{robot}'")
+            raise ValueError(f"sensor '{self.name}' is missing body {body_name!r} in robot '{self.robot_name}'")
         self.site_label = f"{self.name}_site"
         builder.add_site(body=bodies[0], xform=convert_pose_to_transform(pose=p.get(key="offset", default=None)), label=f"{prefix}{self.site_label}")
         self.frame_id = self.frame_id or self.name
@@ -116,7 +117,7 @@ class SensorFixed(Sensor):
     def on_model(self, sim: NewtonianSimulator) -> None:
         """
         """
-        self.site = self.robot(sim=sim).find_shapes(pattern=self.site_label)[0]
+        self.site = self.robot.find_shapes(pattern=self.site_label)[0]
         self.body = int(host(arr=sim.model.shape_body)[self.site])
         self.offset = host(arr=sim.model.shape_transform)[self.site].astype(np.float64)
 
