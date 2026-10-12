@@ -38,7 +38,7 @@ class Input(Plugin):
         self.qos: str = p.get_choice(key="qos", choices=("default", "sensor_data"), default=self.default_qos)
         self.qos_depth = p.get_int(key="qos_depth", default=10)
         self.robot_name: str | None = p.get(key="robot", default=None)
-        self.timeout = p.get_float(key="timeout", default=0.0, at_least=0.0)
+        self.timeout = p.get_float(key="timeout", default=self.default_timeout, at_least=0.0)
         self._msg = None
         self._msg_time = None
 

@@ -91,7 +91,7 @@ class NewtonNode(Node):
             self.subscriptions_.append(self.create_subscription(i.msg_type, i.topic, i.callback, _qos(i)))
 
         rtf = p.get_float(key="sim.real_time_factor", default=1.0, above=0.0)
-        period = self.sim.frame_dt / rtf if rtf > 0.0 else 0.0
+        period = self.sim.frame_dt / rtf
         self.timer = self.create_timer(timer_period_sec=period, callback=self._on_timer)
 
     def _stamp(self, sim: NewtonianSimulator) -> Time:
@@ -113,7 +113,7 @@ class NewtonNode(Node):
         if sim.stepable():
             sim.step()
             stamp = self._stamp(sim=sim)
-            self.clock_pub.publish(Clock(clock=self._stamp(sim=sim)))
+            self.clock_pub.publish(Clock(clock=stamp))
             for s in sim.sense():
                 self.publishers_[s.name].publish(s.to_msg(stamp=stamp))
         sim.render()

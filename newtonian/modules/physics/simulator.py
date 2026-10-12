@@ -50,7 +50,9 @@ class NewtonianSimulator:
         self.p = p
 
         # 'sim' parameters subtree
+        p.check_keys(allowed=("sim", "solver", "environments", "robots", "inputs", "sensors"))
         s = p.subtree("sim")
+        s.check_keys(allowed=("device", "substeps", "frame_rate", "real_time_factor", "gravity", "viewer", "cuda_graph", "seed"))
 
         # warp device
         self.device = wp.get_device(s.get("device", None))
@@ -152,8 +154,6 @@ class NewtonianSimulator:
         # build custom viewer
         if self.viewer_type == "gl":
             self.viewer = viewer.attach(sim=self) if viewer is not None else NewtonianViewer(sim=self)
-        elif self.viewer_type != "none":
-            raise ValueError(f"viewer must be 'none' or 'gl'")
 
         # builds CUDA graph
         self._capture()

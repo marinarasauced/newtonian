@@ -123,7 +123,7 @@ class InputRacecar(_Base):
         if self.cmd_target == self.cmd:
             return
         dt = sim.frame_dt
-        rate = self.max_accel if abs(self.cmd_target.v) > abs(self.cmd.v) and self.cmd_target.v * self.cmd.v >= 0.0 else self.max_accel
+        rate = self.max_accel if abs(self.cmd_target.v) > abs(self.cmd.v) and self.cmd_target.v * self.cmd.v >= 0.0 else self.max_decel
         self.cmd.v += max(-rate * dt, min(rate * dt, self.cmd_target.v - self.cmd.v))
         self.cmd.delta += max(-self.max_steer_rate * dt, min(self.max_steer_rate * dt, self.cmd_target.delta - self.cmd.delta))
         self._write(sim=sim, command=self.cmd)
