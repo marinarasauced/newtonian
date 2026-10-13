@@ -21,10 +21,12 @@ if TYPE_CHECKING:
 @ENVIRONMENTS.register("track")
 class EnvironmentTrack(Environment):
     """
+    Walls built from a ROS map image.
     """
 
     def on_build(self, sim: NewtonianSimulator, builder: newton.ModelBuilder) -> None:
         """
+        Adds one box wall for each block of occupied pixels.
         """
         super().on_build(sim=sim, builder=builder)
         p = self.p

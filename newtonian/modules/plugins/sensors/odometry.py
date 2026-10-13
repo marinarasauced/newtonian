@@ -20,6 +20,7 @@ if TYPE_CHECKING:
 @dataclass
 class _Data:
     """
+    Pose in the world frame, and velocities in the body frame.
     """
     pose: np.ndarray
     v: np.ndarray
@@ -28,11 +29,13 @@ class _Data:
 
 class _Base(Sensor):
     """
+    Odometry of one robot body.
     """
     msg_type = Odometry
 
     def on_model(self, sim: NewtonianSimulator) -> None:
         """
+        Finds the body, and reads the frame and noise keys.
         """
         super().on_model(sim=sim)
         p = self.p
@@ -46,6 +49,7 @@ class _Base(Sensor):
 
     def _odometry(self, stamp: Time, data: _Data) -> Odometry:
         """
+        Returns 'data' as an odometry message, with covariances from the noise.
         """
         msg = Odometry()
         msg.header.stamp = stamp
@@ -82,15 +86,18 @@ class _Base(Sensor):
 @SENSORS.register("odometry")
 class SensorOdometry(_Base):
     """
+    Odometry from the true body state with Gaussian noise.
     """
 
     def to_msg(self, stamp: Time) -> Odometry:
         """
+        Returns the last odometry message.
         """
         return self._odometry(stamp=stamp, data=self.data)
 
     def update(self, sim: NewtonianSimulator, cache: Cache) -> None:
         """
+        Reads the pose and the velocities of the body origin, and adds noise.
         """
         X = cache.body_q()[self.body].astype(np.float64)
         q = X[3:]

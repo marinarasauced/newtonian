@@ -31,12 +31,14 @@ SENSORS: Registry = Registry("sensor")
 
 class Sensor(Plugin):
     """
+    Base of the sensor plugins, which publish one message type at a fixed rate.
     """
     msg_type: type
     default_qos = "sensor_data"
 
     def __init__(self, name: str, p: Parameters) -> None:
         """
+        Reads the common sensor keys.
         """
         super().__init__(name=name, p=p)
 
@@ -64,6 +66,7 @@ class Sensor(Plugin):
 
     def on_build(self, sim: NewtonianSimulator, builder: newton.ModelBuilder) -> None:
         """
+        Finds the robot that the 'robot' key refers to.
         """
         super().on_build(sim=sim, builder=builder)
 
@@ -79,26 +82,31 @@ class Sensor(Plugin):
 
     def companions(self) -> list[Sensor]:
         """
+        Returns extra sensors that publish next to this sensor.
         """
         return []
 
     def to_msg(self, stamp: Time) -> Any:
         """
+        Returns the message of the last update.
         """
         raise NotImplementedError
 
     def update(self, sim: NewtonianSimulator, cache: Cache) -> None:
         """
+        Reads the current state into the sensor data.
         """
         raise NotImplementedError
 
 
 class SensorFixed(Sensor):
     """
+    Sensor mounted on a robot at a site or at a body with an offset.
     """
 
     def on_build(self, sim: NewtonianSimulator, builder: newton.ModelBuilder) -> None:
         """
+        Finds the site, or adds a site at 'body' with 'offset'.
         """
         super().on_build(sim=sim, builder=builder)
         p = self.p
@@ -121,6 +129,7 @@ class SensorFixed(Sensor):
 
     def on_model(self, sim: NewtonianSimulator) -> None:
         """
+        Finds the body and the offset of the site.
         """
         super().on_model(sim=sim)
 
@@ -130,6 +139,7 @@ class SensorFixed(Sensor):
 
     def pose(self, cache: Cache) -> np.ndarray:
         """
+        Returns the world pose of the site.
         """
         if self.body < 0:
             return self.offset
@@ -138,10 +148,12 @@ class SensorFixed(Sensor):
 
 class SensorRaytrace(SensorFixed):
     """
+    Mounted sensor that casts rays into the scene.
     """
 
     def on_model(self, sim: NewtonianSimulator) -> None:
         """
+        Creates the ray tracer.
         """
         super().on_model(sim=sim)
 
@@ -152,11 +164,13 @@ class SensorRaytrace(SensorFixed):
 
     def max_distance(self) -> float:
         """
+        Returns the maximum ray distance.
         """
         return self.p.get_float(key="max_distance", default=1000.0, above=0.0)
 
     def transform(self, sim: NewtonianSimulator, cache: Cache) -> wp.array2d:
         """
+        Returns the pose of the site as a camera transform for the ray tracer.
         """
         X = tf_mul(a=self.pose(cache=cache), b=TRANSFORM_ROS_TO_GL).astype(np.float32)
         out = wp.array(data=[[wp.transformf(wp.vec3f(*X[:3]), wp.quatf(*X[3:]))]], dtype=wp.transformf, device=sim.device)
@@ -175,6 +189,7 @@ class Cache:
 
     def __init__(self, sim: NewtonianSimulator) -> None:
         """
+        Stores the simulator; the data is read on first use.
         """
         self.sim = sim
         self._body_q: np.ndarray | None = None
@@ -182,6 +197,7 @@ class Cache:
 
     def body_q(self) -> np.ndarray:
         """
+        Returns the host copy of the body poses.
         """
         if self._body_q is None:
             self._body_q = to_numpy(arr=self.sim.state.body_q)
@@ -189,6 +205,7 @@ class Cache:
 
     def bvh_refit_shapes(self) -> None:
         """
+        Refits the shape BVH for ray casts once per frame.
         """
         if not self._bvh_shapes_refit:
             self.sim.model.bvh_refit_shapes(state=self.sim.state)
@@ -201,12 +218,14 @@ class Cache:
 
 def noise(sim: NewtonianSimulator, std: float, shape: int | tuple[int, ...]) -> np.ndarray:
     """
+    Returns Gaussian noise with standard deviation 'std', or zeros if 'std' is 0.
     """
     return sim.rng.normal(0.0, std, shape) if std > 0.0 else np.zeros(shape)
 
 
 def update_sensors(sim: NewtonianSimulator, sensors: list[Sensor]) -> list[Sensor]:
     """
+    Updates the sensors that are due, and returns them.
     """
     due = [s for s in sensors if s.is_due(sim_time=sim.sim_time)]
     cache = Cache(sim=sim)

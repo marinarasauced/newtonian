@@ -23,6 +23,7 @@ _WHEELS = ("front_left", "front_right", "rear_left", "rear_right")
 @dataclass
 class _Command:
     """
+    Speed in m/s and steering angle in rad.
     """
     v: float = 0.0
     delta: float = 0.0
@@ -30,12 +31,14 @@ class _Command:
 
 class _Base(Input):
     """
+    Ackermann steering from 'Twist' messages.
     """
     msg_type = Twist
     default_timeout = 0.5
 
     def __init__(self, name: str, p: Parameters) -> None:
         """
+        Reads the geometry, the limits, and the joint names.
         """
         super().__init__(name=name, p=p)
 
@@ -56,6 +59,7 @@ class _Base(Input):
 
     def on_model(self, sim: NewtonianSimulator) -> None:
         """
+        Finds the indices of the steering and wheel joints.
         """
         super().on_model(sim=sim)
 
@@ -66,6 +70,7 @@ class _Base(Input):
 
     def _command(self, msg: Twist) -> _Command:
         """
+        Returns the speed and steering angle of 'msg', within the limits.
         """
         v = msg.linear.x
         delta = 0.0 if abs(v) < 1.0e-3 else math.atan(self.wheelbase * msg.angular.z / v)
@@ -76,6 +81,7 @@ class _Base(Input):
 
     def _write(self, sim: NewtonianSimulator, command: _Command) -> None:
         """
+        Writes the steering angles and wheel speeds of 'command' into the simulator buffers.
         """
         v, delta = command.v, command.delta
         L, half = self.wheelbase, self.track / 2
@@ -105,10 +111,12 @@ class _Base(Input):
 @INPUTS.register("racecar")
 class InputRacecar(_Base):
     """
+    Racecar input that ramps speed and steering to the last command.
     """
 
     def __init__(self, name: str, p: Parameters) -> None:
         """
+        Starts at rest.
         """
         super().__init__(name=name, p=p)
 
@@ -117,6 +125,7 @@ class InputRacecar(_Base):
 
     def control(self, sim: NewtonianSimulator) -> None:
         """
+        Moves the command toward the target at the acceleration and steering rate limits.
         """
         super().control(sim=sim)
 
@@ -130,11 +139,13 @@ class InputRacecar(_Base):
 
     def handle(self, sim: NewtonianSimulator, msg: Twist) -> None:
         """
+        Sets the target command.
         """
         self.cmd_target = self._command(msg=msg)
 
     def on_timeout(self, sim: NewtonianSimulator) -> None:
         """
+        Sets the target to rest.
         """
         super().on_timeout(sim=sim)
 
@@ -142,6 +153,7 @@ class InputRacecar(_Base):
 
     def reset(self) -> None:
         """
+        Returns to rest.
         """
         super().reset()
 
@@ -151,6 +163,7 @@ class InputRacecar(_Base):
 
 def _check_keys(keys: dict[str, str], allowed: tuple[str, ...], where: str) -> None:
     """
+    Raises 'ParameterError' if a key of 'keys' is not in 'allowed'.
     """
     unknown = sorted(set(keys) - set(allowed))
     if unknown:

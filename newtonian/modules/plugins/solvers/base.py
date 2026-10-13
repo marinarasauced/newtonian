@@ -23,6 +23,7 @@ class Solver:
 
     def __init__(self, args: dict[str, Any]) -> None:
         """
+        Stores the arguments for the Newton solver.
         """
         self.args = args
 
@@ -38,6 +39,7 @@ class Solver:
 
     def create(self, model: newton.Model) -> newton.solvers.SolverBase:
         """
+        Returns the Newton solver for 'model'.
         """
         return self.solver_cls(model, **self.args)
 
@@ -52,12 +54,16 @@ class Solver:
     @property
     def reports_actuator_forces(self) -> bool:
         """
+        True if the solver can give actuator forces.
+        False otherwise.
         """
         return False
 
     @property
     def supports_lazy_drives(self) -> bool:
         """
+        True if the solver can change drive gains at runtime.
+        False otherwise.
         """
         return True
 

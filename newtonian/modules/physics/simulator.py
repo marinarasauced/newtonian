@@ -25,6 +25,7 @@ class NewtonianSimulatorBuffers:
 
     def __init__(self, control: newton.Control) -> None:
         """
+        Copies the joint targets and forces of 'control' to the host.
         """
         self.joint_target_q = to_numpy(arr=control.joint_target_q).copy()
         self.joint_target_qd = to_numpy(arr=control.joint_target_qd).copy()
@@ -43,10 +44,12 @@ class NewtonianSimulatorBuffers:
 
 class NewtonianSimulator:
     """
+    Newton scene built from the parameters, with its solver, states, plugins, and viewer.
     """
 
     def __init__(self, p: Parameters, viewer: NewtonianViewer | None = None) -> None:
         """
+        Reads the 'sim' keys and builds the scene.
         """
         self.p = p
 

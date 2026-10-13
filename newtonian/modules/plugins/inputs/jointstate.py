@@ -21,6 +21,7 @@ if TYPE_CHECKING:
 @dataclass
 class _Command:
     """
+    Joint targets by name; 'None' keeps the current value.
     """
     names: list[str]
     position: list[float | None]
@@ -30,11 +31,13 @@ class _Command:
 
 class _Base(Input):
     """
+    Joint targets from 'JointState' messages.
     """
     msg_type = JointState
 
     def on_model(self, sim: NewtonianSimulator) -> None:
         """
+        Maps the names of the revolute and prismatic joints to their indices.
         """
         super().on_model(sim=sim)
 
@@ -45,6 +48,7 @@ class _Base(Input):
 
     def _command(self, msg: JointState) -> _Command:
         """
+        Returns the values of 'msg', with missing and NaN values as 'None'.
         """
         def values(items: Sequence[float]) -> list[float | None]:
             return [float(items[i]) if i < len(items) and math.isfinite(items[i]) else None for i in range(len(msg.name))]
@@ -57,6 +61,7 @@ class _Base(Input):
 
     def _write(self, sim: NewtonianSimulator, command: _Command) -> None:
         """
+        Writes the command into the simulator buffers; unknown names are ignored.
         """
         for name, position, velocity, effort in zip(command.names, command.position, command.velocity, command.effort):
             idx = self.index.get(name)
@@ -75,10 +80,12 @@ class _Base(Input):
 @INPUTS.register("jointstate")
 class InputJointState(_Base):
     """
+    Joint position, velocity, and effort targets for any robot.
     """
 
     def __init__(self, name: str, p: Parameters) -> None:
         """
+        Starts with no message handled.
         """
         super().__init__(name=name, p=p)
 
@@ -86,6 +93,7 @@ class InputJointState(_Base):
 
     def handle(self, sim: NewtonianSimulator, msg: JointState) -> None:
         """
+        Writes each message once.
         """
         if msg is self._handled:
             return
@@ -94,6 +102,7 @@ class InputJointState(_Base):
 
     def reset(self) -> None:
         """
+        Clears the handled message.
         """
         super().reset()
 

@@ -18,11 +18,13 @@ if TYPE_CHECKING:
 
 class _Base(SensorRaytrace):
     """
+    2D lidar that scans in the xy plane of its site.
     """
     msg_type = LaserScan
 
     def __init__(self, name: str, p: Parameters) -> None:
         """
+        Reads the scan keys.
         """
         super().__init__(name=name, p=p)
 
@@ -35,11 +37,13 @@ class _Base(SensorRaytrace):
 
     def max_distance(self) -> float:
         """
+        Returns 'range_max'.
         """
         return self.range_max
 
     def on_model(self, sim: NewtonianSimulator) -> None:
         """
+        Computes the ray directions, and creates the range output.
         """
         super().on_model(sim=sim)
 
@@ -55,6 +59,7 @@ class _Base(SensorRaytrace):
 
     def _laserscan(self, stamp: Time, data: np.ndarray) -> LaserScan:
         """
+        Returns 'data' as a laser scan message.
         """
         msg = LaserScan()
         msg.header.stamp = stamp
@@ -75,15 +80,18 @@ class _Base(SensorRaytrace):
 @SENSORS.register("lidar")
 class SensorLidar(_Base):
     """
+    2D lidar with Gaussian noise; no hit is inf.
     """
 
     def to_msg(self, stamp: Time) -> LaserScan:
         """
+        Returns the last scan.
         """
         return self._laserscan(stamp=stamp, data=self.data)
 
     def update(self, sim: NewtonianSimulator, cache: Cache) -> None:
         """
+        Casts the rays, and adds noise to the ranges.
         """
         cache.bvh_refit_shapes()
         self.tracer.update(state=sim.state, camera_transforms=self.transform(sim=sim, cache=cache), camera_rays=self.rays, depth_image=self.depth)

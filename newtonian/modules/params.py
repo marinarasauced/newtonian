@@ -13,6 +13,7 @@ _MISSING = object()
 
 def flatten(tree: dict, prefix: str = "") -> dict[str, Any]:
     """
+    Returns 'tree' as one flat dict with dotted keys.
     """
     out: dict[str, Any] = {}
     for key, value in tree.items():
@@ -26,15 +27,18 @@ def flatten(tree: dict, prefix: str = "") -> dict[str, Any]:
 
 class ParameterError(ValueError):
     """
+    Raised when a configuration key is missing or has a bad value.
     """
 
 
 class Parameters:
     """
+    Flat configuration tree with typed getters that name the full key in errors.
     """
 
     def __init__(self, flat: dict[str, Any] | None = None, prefix: str = "") -> None:
         """
+        Stores the flat tree and the key prefix used in errors.
         """
         self._flat = dict(flat or {})
         self.prefix = prefix
@@ -60,6 +64,7 @@ class Parameters:
 
     def children(self) -> list[str]:
         """
+        Returns the names of the direct subtrees in file order.
         """
         seen: dict[str, None] = {}
         for key in self._flat:
@@ -69,6 +74,7 @@ class Parameters:
 
     def check_keys(self, allowed: Iterable[str]) -> None:
         """
+        Raises 'ParameterError' if a top-level key is not in 'allowed'.
         """
         allowed = set(allowed)
         unknown = sorted({key.split(".", 1)[0] for key in self._flat} - allowed)
@@ -77,6 +83,7 @@ class Parameters:
 
     def entries(self, group: str, key: str = "type") -> list[tuple[str, Parameters]]:
         """
+        Returns the named entries of 'group' that have 'key', or the entries listed in 'names'.
         """
         tree = self.subtree(group)
         names = tree.get("names", None)
@@ -98,6 +105,7 @@ class Parameters:
 
     def get_int(self, key: str, default: Any = _MISSING, at_least: int | None = None) -> int:
         """
+        Returns the value of 'key' as an integer, and raises 'ParameterError' if it is not an integer or is out of range.
         """
         value = self.get(key=key, default=default)
         if isinstance(value, bool) or not isinstance(value, (int, float)) or value != int(value):
@@ -108,6 +116,7 @@ class Parameters:
 
     def get_float(self, key: str, default: Any = _MISSING, above: float | None = None, at_least: float | None = None) -> float:
         """
+        Returns the value of 'key' as a float, and raises 'ParameterError' if it is not a number or is out of range.
         """
         value = self.get(key=key, default=default)
         if isinstance(value, bool) or not isinstance(value, (int, float)):
@@ -120,6 +129,7 @@ class Parameters:
 
     def get_choice(self, key: str, choices: Iterable[str], default: Any = _MISSING) -> str:
         """
+        Returns the value of 'key', and raises 'ParameterError' if it is not in 'choices'.
         """
         value = self.get(key=key, default=default)
         choices = tuple(choices)
@@ -129,6 +139,7 @@ class Parameters:
 
     def get_bool(self, key: str, default: Any = _MISSING) -> bool:
         """
+        Returns the value of 'key', and raises 'ParameterError' if it is not true or false.
         """
         value = self.get(key=key, default=default)
         if not isinstance(value, bool):
@@ -146,6 +157,7 @@ class Parameters:
 
     def as_kwargs(self) -> dict[str, Any]:
         """
+        Returns the tree as nested dicts.
         """
         out: dict[str, Any] = {}
         for key, value in self._flat.items():

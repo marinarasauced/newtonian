@@ -42,7 +42,7 @@ def _estimate_contact_forces(
     force: wp.array[wp.spatial_vector],
 ):
     """
-    Writes updated contact forces to buffer rather than summing per body wrenches into
+    Writes the force of each rigid contact into 'force', from a penalty contact model.
     """
     tid = wp.tid()
     force[tid] = wp.spatial_vector()
@@ -151,17 +151,20 @@ def _estimate_contact_forces(
 @SOLVERS.register("featherstone")
 class SolverFeatherstone(Solver):
     """
+    Newton Featherstone solver.
     """
     solver_cls = newton.solvers.SolverFeatherstone
 
     @property
     def reports_contact_forces(self) -> bool:
         """
+        True; the forces are estimated after each frame.
         """
         return True
 
     def update_contacts(self, solver: newton.solvers.SolverBase, contacts: newton.Contacts, state: newton.State) -> None:
         """
+        Writes the estimated contact forces into 'contacts.force'.
         """
         if contacts.force is None or not contacts.rigid_contact_max:
             return

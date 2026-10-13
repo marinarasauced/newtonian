@@ -14,6 +14,7 @@ class Registry(Generic[T]):
 
     def __init__(self, kind: str) -> None:
         """
+        Stores the plugin kind used in errors.
         """
         self.kind = kind
         self._items: dict[str, T] = {}

@@ -50,10 +50,12 @@ _DRIVE_FIELDS = {
 
 class Robot(Plugin):
     """
+    Base of the robot plugins, which load one robot file with its drives.
     """
 
     def __init__(self, name: str, p: Parameters) -> None:
         """
+        Starts with no lazy drives.
         """
         super().__init__(name=name, p=p)
 
@@ -64,11 +66,13 @@ class Robot(Plugin):
 
     def load(self, builder: newton.ModelBuilder, path: str, xform: wp.transform, floating: bool, args: dict[str, Any]) -> None:
         """
+        Loads the robot file into 'builder'.
         """
         raise NotImplementedError
 
     def on_build(self, sim: NewtonianSimulator, builder: newton.ModelBuilder) -> None:
         """
+        Loads the robot, and applies the configs, armature, colors, drives, and start positions.
         """
         super().on_build(sim=sim, builder=builder)
         p = self.p
@@ -104,6 +108,7 @@ class Robot(Plugin):
 
     def on_model(self, sim: NewtonianSimulator) -> None:
         """
+        Finds the joints, bodies, and shapes of the robot in the model.
         """
         super().on_model(sim=sim)
         prefix = self.name + "/"
@@ -122,6 +127,7 @@ class Robot(Plugin):
 
     def reset(self) -> None:
         """
+        Turns the lazy drives off again.
         """
         super().reset()
         if self._sim is not None and self._drives_active and len(self._lazy_dofs):
@@ -131,11 +137,14 @@ class Robot(Plugin):
     @property
     def has_lazy_drives(self) -> bool:
         """
+        True if a drive is lazy.
+        False otherwise.
         """
         return bool(len(self._lazy_dofs))
 
     def activate(self) -> None:
         """
+        Turns the lazy drives on.
         """
         if self._sim is not None and not self._drives_active:
             self._set_lazy_gains(sim=self._sim, gains=self._lazy_gains)
@@ -143,26 +152,31 @@ class Robot(Plugin):
 
     def find_joints(self, pattern: str | list[str]) -> list[int]:
         """
+        Returns the joints that match 'pattern', and raises 'ParameterError' if none match.
         """
         return self._find(table=self.joints, pattern=pattern, what="joint")
 
     def find_bodies(self, pattern: str | list[str]) -> list[int]:
         """
+        Returns the bodies that match 'pattern', and raises 'ParameterError' if none match.
         """
         return self._find(table=self.bodies, pattern=pattern, what="body")
 
     def find_body(self, name: str | None) -> int:
         """
+        Returns the body named 'name', or the root body if 'name' is not set.
         """
         return self.root if not name else self.find_bodies(pattern=name)[0]
 
     def find_shapes(self, pattern: str | list[str]) -> list[int]:
         """
+        Returns the shapes and sites that match 'pattern', and raises 'ParameterError' if none match.
         """
         return self._find(table=self.shapes, pattern=pattern, what="shape/site")
 
     def _find(self, table: dict[int, str], pattern: str | list[str], what: str) -> list[int]:
         """
+        Returns the indices in 'table' that match 'pattern', and raises 'ParameterError' if none match.
         """
         found = [i for i, name in table.items() if matches(name=name, pattern=pattern)]
         if not found:
@@ -171,6 +185,7 @@ class Robot(Plugin):
 
     def _set_lazy_gains(self, sim: NewtonianSimulator, gains: np.ndarray) -> None:
         """
+        Writes 'gains' to the lazy drives, and notifies the solver.
         """
         model = sim.model
         for col, arr in enumerate((require(arr=model.joint_target_ke), require(arr=model.joint_target_kd))):
@@ -215,6 +230,8 @@ def shorthand(label: str) -> str:
 
 def matches(name: str, pattern: str | list[str]) -> bool:
     """
+    True if 'name' matches any glob in 'pattern'.
+    False otherwise.
     """
     patterns = [pattern] if isinstance(pattern, str) else pattern
     return any(fnmatchcase(name, p) for p in patterns)
@@ -229,6 +246,7 @@ def match(names: list[str], pattern: str | list[str]) -> list[int]:
 
 def apply_colors(builder: newton.ModelBuilder, colors: Parameters) -> None:
     """
+    Sets the colors of the shapes that each group selects.
     """
     for group in colors.children():
         c = colors.subtree(group)
@@ -244,6 +262,7 @@ def apply_colors(builder: newton.ModelBuilder, colors: Parameters) -> None:
 
 def apply_drives(builder: newton.ModelBuilder, drives: Parameters) -> dict[int, tuple[float, float]]:
     """
+    Sets the drive values of the joints that each group selects, and returns the gains of the lazy drives.
     """
     lazy: set[int] = set()
     for drive in drives.children():
@@ -272,6 +291,7 @@ def apply_drives(builder: newton.ModelBuilder, drives: Parameters) -> dict[int, 
 
 def apply_initial_joint_q(builder: newton.ModelBuilder, values: dict[str, float], where: str) -> None:
     """
+    Sets the start position and target of the joints that each glob selects.
     """
     for pattern, value in values.items():
         joints = match(names=builder.joint_label, pattern=pattern)
@@ -285,6 +305,7 @@ def apply_initial_joint_q(builder: newton.ModelBuilder, values: dict[str, float]
 
 def _dofs(builder: newton.ModelBuilder, joint: int) -> range:
     """
+    Returns the DOF indices of 'joint'.
     """
     start = builder.joint_qd_start[joint]
     return range(start, start + sum(builder.joint_dof_dim[joint]))
@@ -292,6 +313,7 @@ def _dofs(builder: newton.ModelBuilder, joint: int) -> range:
 
 def _configure(cfg: Any, values: dict[str, Any], where: str) -> None:
     """
+    Sets the fields of 'cfg', and raises 'ParameterError' for an unknown field.
     """
     for key, value in values.items():
         if not hasattr(cfg, key):

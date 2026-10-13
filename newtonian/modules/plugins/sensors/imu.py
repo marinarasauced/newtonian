@@ -19,6 +19,7 @@ if TYPE_CHECKING:
 @dataclass
 class _Data:
     """
+    Orientation, angular velocity, and linear acceleration.
     """
     quat: np.ndarray
     gyro: np.ndarray
@@ -27,11 +28,13 @@ class _Data:
 
 class _Base(SensorFixed):
     """
+    IMU at a site.
     """
     msg_type = Imu
 
     def on_model(self, sim: NewtonianSimulator) -> None:
         """
+        Creates the IMU sensor, and reads the noise keys.
         """
         super().on_model(sim=sim)
         p = self.p
@@ -43,6 +46,7 @@ class _Base(SensorFixed):
 
     def _imu(self, stamp: Time, data: _Data) -> Imu:
         """
+        Returns 'data' as an IMU message, with covariances from the noise.
         """
         msg = Imu()
         msg.header.stamp = stamp
@@ -72,15 +76,18 @@ class _Base(SensorFixed):
 @SENSORS.register("imu")
 class SensorImu(_Base):
     """
+    IMU with Gaussian noise.
     """
 
     def to_msg(self, stamp: Time) -> Imu:
         """
+        Returns the last IMU message.
         """
         return self._imu(stamp=stamp, data=self.data)
 
     def update(self, sim: NewtonianSimulator, cache: Cache) -> None:
         """
+        Reads the orientation, angular velocity, and linear acceleration, and adds noise.
         """
         self.imu.update(state=sim.state)
         self.data = _Data(

@@ -20,6 +20,7 @@ if TYPE_CHECKING:
 @dataclass
 class _Data:
     """
+    Joint positions, velocities, and efforts.
     """
     q: np.ndarray
     qd: np.ndarray
@@ -28,12 +29,14 @@ class _Data:
 
 class _Base(Sensor):
     """
+    State of the revolute and prismatic joints of a robot.
     """
     msg_type = JointState
     default_qos = "default"
 
     def on_model(self, sim: NewtonianSimulator) -> None:
         """
+        Finds the joints, and asks for actuator forces if the solver gives them.
         """
         super().on_model(sim=sim)
         p = self.p
@@ -52,6 +55,7 @@ class _Base(Sensor):
 
     def _jointstate(self, stamp: Time, data: _Data) -> JointState:
         """
+        Returns 'data' as a joint state message.
         """
         msg = JointState()
         msg.header.stamp = stamp
@@ -69,15 +73,18 @@ class _Base(Sensor):
 @SENSORS.register("jointstate")
 class SensorJointState(_Base):
     """
+    Joint state; effort only if the solver gives actuator forces.
     """
 
     def to_msg(self, stamp: Time) -> JointState:
         """
+        Returns the last joint state message.
         """
         return self._jointstate(stamp=stamp, data=self.data)
 
     def update(self, sim: NewtonianSimulator, cache: Cache) -> None:
         """
+        Reads the joint positions, velocities, and efforts.
         """
         self.data = _Data(
             q=to_numpy(arr=sim.state.joint_q)[self.joint_q_idx],

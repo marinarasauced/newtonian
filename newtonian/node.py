@@ -26,6 +26,7 @@ _RTF_TOLERANCE = 0.01
 
 def _qos(item) -> QoSProfile:
     """
+    Returns the QoS profile of the 'qos' key of 'item'.
     """
     if item.qos == "sensor_data":
         return qos_profile_sensor_data
@@ -36,10 +37,12 @@ def _qos(item) -> QoSProfile:
 
 class NewtonianNode(Node):
     """
+    ROS 2 node that steps the simulator, publishes the sensors, and subscribes to the inputs.
     """
 
     def __init__(self) -> None:
         """
+        Creates the clock publisher and the services, and builds the scene.
         """
         super().__init__("newtonian", allow_undeclared_parameters=True, automatically_declare_parameters_from_overrides=True)
 
@@ -55,6 +58,7 @@ class NewtonianNode(Node):
 
     def _params(self) -> Parameters:
         """
+        Returns the node parameters without the ROS parameters.
         """
         names = self.list_parameters([], 0).names
         flat = {n: p.value for n, p in zip(names, self.get_parameters(names)) if n not in _ROS_PARAMETERS}
@@ -62,6 +66,7 @@ class NewtonianNode(Node):
 
     def _teardown(self) -> None:
         """
+        Destroys the timer, the publishers, the subscriptions, and the simulator.
         """
         if self.timer is not None:
             self.destroy_timer(self.timer)
@@ -77,6 +82,7 @@ class NewtonianNode(Node):
 
     def _rebuild(self) -> None:
         """
+        Builds a new simulator, and keeps the old one if the build fails.
         """
         p = self._params()
         old = self.sim
@@ -104,12 +110,14 @@ class NewtonianNode(Node):
 
     def _stamp(self, sim: NewtonianSimulator) -> Time:
         """
+        Returns the simulation time of the current frame.
         """
         ns = round(sim.frame * 1.0e+9 / sim.frame_rate)
         return Time(sec=ns//1_000_000_000, nanosec=ns%1_000_000_000)
 
     def _on_timer(self) -> None:
         """
+        Steps one frame, publishes the clock and the sensors, and renders.
         """
         sim = self.sim
         if sim is None or not self.context.ok():
@@ -131,6 +139,7 @@ class NewtonianNode(Node):
 
     def _check_rtf(self, sim: NewtonianSimulator) -> None:
         """
+        Logs a warning if the real-time factor differs from the target.
         """
         now = time.monotonic()
         if self._rtf_window is None:
@@ -146,6 +155,7 @@ class NewtonianNode(Node):
 
     def _on_reset(self, request: Trigger.Request, response: Trigger.Response) -> Trigger.Response:
         """
+        Resets the simulator.
         """
         self._rtf_window = None
         if self.sim is None:
@@ -158,6 +168,7 @@ class NewtonianNode(Node):
 
     def _on_rebuild(self, request: Trigger.Request, response: Trigger.Response) -> Trigger.Response:
         """
+        Rebuilds the simulator from the current parameters.
         """
         try:
             self._rebuild()
@@ -170,6 +181,7 @@ class NewtonianNode(Node):
 
     def _on_pause(self, request: SetBool.Request, response: SetBool.Response) -> SetBool.Response:
         """
+        Pauses or resumes stepping.
         """
         if self.sim is not None:
             self.sim.pause(is_paused=bool(request.data))
@@ -179,6 +191,7 @@ class NewtonianNode(Node):
 
     def destroy_node(self) -> None:
         """
+        Tears down the simulator before the node.
         """
         self._teardown()
         super().destroy_node()
@@ -186,6 +199,7 @@ class NewtonianNode(Node):
 
 def main(args=None) -> None:
     """
+    Runs the node until shutdown.
     """
     rclpy.init(args=args)
     node = None

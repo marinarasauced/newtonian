@@ -24,6 +24,7 @@ INPUTS: Registry = Registry("input")
 
 class Input(Plugin):
     """
+    Base of the input plugins, which turn messages from one topic into robot commands.
     """
     msg_type: type
     default_qos = "default"
@@ -31,6 +32,7 @@ class Input(Plugin):
 
     def __init__(self, name: str, p: Parameters) -> None:
         """
+        Reads the common input keys.
         """
         super().__init__(name=name, p=p)
 
@@ -45,12 +47,14 @@ class Input(Plugin):
 
     def callback(self, msg: Any) -> None:
         """
+        Stores the last message; the timeout starts at the next step.
         """
         self._msg = msg
         self._msg_time = None
 
     def control(self, sim: NewtonianSimulator) -> None:
         """
+        Applies the last message, or calls 'on_timeout' if it is older than 'timeout'.
         """
         msg = self._msg
         if msg is None:
@@ -66,11 +70,13 @@ class Input(Plugin):
 
     def handle(self, sim: NewtonianSimulator, msg: Any) -> None:
         """
+        Writes the command of 'msg' into the simulator buffers.
         """
         raise NotImplementedError
 
     def on_build(self, sim: NewtonianSimulator, builder: newton.ModelBuilder) -> None:
         """
+        Finds the robot that the 'robot' key refers to.
         """
         super().on_build(sim=sim, builder=builder)
 
@@ -78,10 +84,12 @@ class Input(Plugin):
 
     def on_timeout(self, sim: NewtonianSimulator) -> None:
         """
+        Called once when the last message is older than 'timeout'.
         """
 
     def reset(self) -> None:
         """
+        Clears the last message.
         """
         super().reset()
 

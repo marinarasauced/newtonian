@@ -14,11 +14,13 @@ if TYPE_CHECKING:
 @ENVIRONMENTS.register("groundplane")
 class EnvironmentGroundPlane(Environment):
     """
+    Infinite ground plane at 'height'.
     """
     default_color = (0.8, 0.8, 0.8)
 
     def on_build(self, sim: NewtonianSimulator, builder: newton.ModelBuilder) -> None:
         """
+        Adds the ground plane.
         """
         super().on_build(sim=sim, builder=builder)
         p = self.p

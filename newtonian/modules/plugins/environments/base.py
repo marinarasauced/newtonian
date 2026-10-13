@@ -23,11 +23,13 @@ ENVIRONMENTS: Registry = Registry("environment")
 
 class Environment(Plugin):
     """
+    Base of the environment plugins, which add static shapes to the scene.
     """
     default_color = (0.6, 0.6, 0.6)
 
     def __init__(self, name: str, p: Parameters) -> None:
         """
+        Reads the 'color' key.
         """
         super().__init__(name=name, p=p)
 
@@ -38,6 +40,7 @@ class Environment(Plugin):
 
     def on_build(self, sim: NewtonianSimulator, builder: newton.ModelBuilder) -> None:
         """
+        Reads the contact keys into a shape config.
         """
         super().on_build(sim=sim, builder=builder)
         p = self.p

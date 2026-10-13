@@ -18,11 +18,13 @@ if TYPE_CHECKING:
 
 class _Base(SensorRaytrace):
     """
+    Pinhole camera that publishes an image.
     """
     msg_type = Image
 
     def __init__(self, name: str, p: Parameters) -> None:
         """
+        Reads the 'camera_info' key.
         """
         super().__init__(name=name, p=p)
 
@@ -30,6 +32,7 @@ class _Base(SensorRaytrace):
 
     def companions(self) -> list[Sensor]:
         """
+        Returns the camera info sensor, next to the image topic.
         """
         if not self.publish_info:
             return []
@@ -39,6 +42,7 @@ class _Base(SensorRaytrace):
 
     def on_model(self, sim: NewtonianSimulator) -> None:
         """
+        Reads the image size and field of view, and computes the camera rays.
         """
         super().on_model(sim=sim)
         p = self.p
@@ -50,6 +54,7 @@ class _Base(SensorRaytrace):
 
     def _image(self, stamp: Time, data: np.ndarray, encoding: str, step: int) -> Image:
         """
+        Returns 'data' as an image message.
         """
         msg = Image()
         msg.header.stamp = stamp
@@ -67,10 +72,12 @@ class _Base(SensorRaytrace):
 @SENSORS.register("camera_color")
 class SensorCameraColor(_Base):
     """
+    Color camera, 'rgb8'.
     """
 
     def on_model(self, sim: NewtonianSimulator) -> None:
         """
+        Creates the color image output.
         """
         super().on_model(sim=sim)
 
@@ -78,11 +85,13 @@ class SensorCameraColor(_Base):
 
     def to_msg(self, stamp: Time) -> Image:
         """
+        Returns the last color image.
         """
         return self._image(stamp=stamp, data=self.data, encoding="rgb8", step=self.width*3)
 
     def update(self, sim: NewtonianSimulator, cache: Cache) -> None:
         """
+        Renders the color image.
         """
         cache.bvh_refit_shapes()
         self.tracer.update(state=sim.state, camera_transforms=self.transform(sim=sim, cache=cache), camera_rays=self.rays, color_image=self.color)
@@ -93,10 +102,12 @@ class SensorCameraColor(_Base):
 @SENSORS.register("camera_depth")
 class SensorCameraDepth(_Base):
     """
+    Depth camera, '32FC1' in m; no hit is NaN.
     """
 
     def on_model(self, sim: NewtonianSimulator) -> None:
         """
+        Creates the depth image output.
         """
         super().on_model(sim=sim)
 
@@ -104,11 +115,13 @@ class SensorCameraDepth(_Base):
 
     def to_msg(self, stamp: Time) -> Image:
         """
+        Returns the last depth image.
         """
         return self._image(stamp=stamp, data=self.data, encoding="32FC1", step=self.width*4)
 
     def update(self, sim: NewtonianSimulator, cache: Cache) -> None:
         """
+        Renders the depth image.
         """
         cache.bvh_refit_shapes()
         self.tracer.update(state=sim.state, camera_transforms=self.transform(sim=sim, cache=cache), camera_rays=self.rays, forward_depth_image=self.depth)
@@ -119,11 +132,13 @@ class SensorCameraDepth(_Base):
 
 class _CameraInfo(Sensor):
     """
+    Camera info of a camera, at the camera rate.
     """
     msg_type = CameraInfo
 
     def __init__(self, camera: _Base, topic: str) -> None:
         """
+        Uses the topic, rate, QoS, and robot of 'camera'.
         """
         p = Parameters(flat={"topic": topic, "rate": camera.rate, "qos": camera.qos, "qos_depth": camera.qos_depth, "robot": camera.robot_name}, prefix=f"{camera.p.prefix}camera_info.")
         super().__init__(name=f"{camera.name}/camera_info", p=p)
@@ -132,6 +147,7 @@ class _CameraInfo(Sensor):
 
     def to_msg(self, stamp: Time) -> CameraInfo:
         """
+        Returns the pinhole model of the camera.
         """
         camera = self.camera
         f = float((camera.height / 2) / np.tan(camera.fov / 2))
@@ -151,4 +167,5 @@ class _CameraInfo(Sensor):
 
     def update(self, sim: NewtonianSimulator, cache: Cache) -> None:
         """
+        Does nothing; the camera info does not change.
         """

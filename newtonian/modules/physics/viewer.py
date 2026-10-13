@@ -16,10 +16,12 @@ _SKY_COLOR = (38.0 / 255.0, 36.0 / 255.0, 38.0 / 255.0)
 
 class NewtonianViewer:
     """
+    Newton GL viewer with a control panel, kept across rebuilds.
     """
 
     def __init__(self, sim: NewtonianSimulator) -> None:
         """
+        Opens the viewer window for 'sim'.
         """
         self.gl = newton.viewer.ViewerGL()
         self._render_setup()
@@ -28,6 +30,7 @@ class NewtonianViewer:
 
     def attach(self, sim: NewtonianSimulator) -> NewtonianViewer:
         """
+        Shows the model of 'sim', and returns the viewer.
         """
         self.sim = sim
         self.gl.set_model(model=sim.model)
@@ -46,16 +49,21 @@ class NewtonianViewer:
     @is_paused.setter
     def is_paused(self, is_paused: bool) -> None:
         """
+        True if stepping is paused.
+        False otherwise.
         """
         self.gl._paused = is_paused
 
     def is_running(self) -> bool:
         """
+        True if the window is open.
+        False otherwise.
         """
         return self.gl.is_running()
 
     def stepable(self) -> bool:
         """
+        Returns whether the simulator should step.
         """
         return self.gl.should_step()
 
