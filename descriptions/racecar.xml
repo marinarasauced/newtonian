@@ -1,0 +1,50 @@
+<mujoco model="racecar">
+  <compiler angle="radian"/>
+  <default>
+    <geom friction="1.0 0.005 0.0001"/>
+    <default class="steer">
+      <joint type="hinge" axis="0 0 1" range="-0.4189 0.4189" armature="0.001" damping="0.01"/>
+    </default>
+    <default class="wheel">
+      <joint type="hinge" axis="0 1 0" armature="0.0005" damping="0.001"/>
+      <geom type="cylinder" size="0.05 0.0225" euler="1.5707963 0 0" mass="0.15" rgba="0.1 0.1 0.1 1"/>
+    </default>
+    <default class="knuckle">
+      <geom type="sphere" size="0.01" mass="0.05" contype="0" conaffinity="0"/>
+    </default>
+  </default>
+  <worldbody>
+    <body name="base_link" pos="0 0 0.08">
+      <freejoint name="root"/>
+      <geom name="chassis" type="box" size="0.22 0.08 0.025" mass="3.0" rgba="0.8 0.1 0.1 1"/>
+      <geom name="lidar_body" type="cylinder" size="0.035 0.02" pos="0.16 0 0.045" mass="0.17" rgba="0.2 0.2 0.2 1"/>
+      <site name="imu" pos="0 0 0"/>
+      <site name="laser" pos="0.16 0 0.07"/>
+      <site name="camera" pos="0.2 0 0.04"/>
+      <body name="front_left_hinge" pos="0.165 0.12 -0.03">
+        <joint name="front_left_steer_joint" class="steer"/>
+        <geom class="knuckle"/>
+        <body name="front_left_wheel">
+          <joint name="front_left_wheel_joint" class="wheel"/>
+          <geom class="wheel"/>
+        </body>
+      </body>
+      <body name="front_right_hinge" pos="0.165 -0.12 -0.03">
+        <joint name="front_right_steer_joint" class="steer"/>
+        <geom class="knuckle"/>
+        <body name="front_right_wheel">
+          <joint name="front_right_wheel_joint" class="wheel"/>
+          <geom class="wheel"/>
+        </body>
+      </body>
+      <body name="rear_left_wheel" pos="-0.165 0.12 -0.03">
+        <joint name="rear_left_wheel_joint" class="wheel"/>
+        <geom class="wheel"/>
+      </body>
+      <body name="rear_right_wheel" pos="-0.165 -0.12 -0.03">
+        <joint name="rear_right_wheel_joint" class="wheel"/>
+        <geom class="wheel"/>
+      </body>
+    </body>
+  </worldbody>
+</mujoco>

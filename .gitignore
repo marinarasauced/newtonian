@@ -1,0 +1,7 @@
+
+# editor and python cache
+.vscode/
+__pycache__/
+
+# newton gl viewer layout
+imgui.ini
