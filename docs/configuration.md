@@ -188,7 +188,7 @@ drives:
 |---|---|---|
 | `topic` | entry name | ROS topic |
 | `rate` | `0.0` | Hz; `0` means each frame |
-| `qos` | `sensor_data` | `sensor_data` (best effort) or `default` (reliable) |
+| `qos` | `sensor_data`; `default` for `jointstate` | `sensor_data` (best effort) or `default` (reliable) |
 | `qos_depth` | `10` | history depth for `default` |
 | `frame_id` | see below | header frame |
 | `robot` | the only robot | robot name |

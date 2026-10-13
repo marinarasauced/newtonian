@@ -5,7 +5,7 @@ from ament_index_python.packages import get_package_share_directory
 from launch import LaunchContext, LaunchDescription
 from launch.actions import DeclareLaunchArgument, OpaqueFunction
 from launch.substitutions import LaunchConfiguration
-from launch_ros.actions import Node
+from launch_ros.actions import Node, SetParameter
 
 
 def _node(context: LaunchContext) -> list:
@@ -38,7 +38,11 @@ def generate_launch_description():
             DeclareLaunchArgument(
                 name="use_sim_time",
                 default_value="true",
-                description="use /clock in nodes started next to the simulator (the simulator itself runs on wall time)",
+                description="use /clock time in the nodes of this launch (the simulator always steps on wall time)",
+            ),
+            SetParameter(
+                name="use_sim_time",
+                value=LaunchConfiguration("use_sim_time"),
             ),
             OpaqueFunction(
                 function=_node

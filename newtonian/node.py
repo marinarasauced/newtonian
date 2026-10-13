@@ -1,10 +1,13 @@
 
 from __future__ import annotations
 
+import signal
 import time
 
 import rclpy
 import rclpy.executors
+from rclpy.clock import Clock as RosClock
+from rclpy.clock_type import ClockType
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 from rclpy.subscription import Subscription
@@ -106,7 +109,7 @@ class NewtonianNode(Node):
 
         self.rtf = self.sim.real_time_factor
         self._rtf_window: tuple[float, float] | None = None
-        self.timer = self.create_timer(timer_period_sec=self.sim.frame_dt / self.rtf, callback=self._on_timer)
+        self.timer = self.create_timer(timer_period_sec=self.sim.frame_dt / self.rtf, callback=self._on_timer, clock=RosClock(clock_type=ClockType.STEADY_TIME))
 
     def _stamp(self, sim: NewtonianSimulator) -> Time:
         """
@@ -214,6 +217,8 @@ def main(args=None) -> None:
         if rclpy.ok():
             raise
     finally:
+        # launch forwards a second SIGINT, ignore it during cleanup
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
         if node is not None:
             node.destroy_node()
         rclpy.try_shutdown()
