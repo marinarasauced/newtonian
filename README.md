@@ -1,5 +1,10 @@
 # newtonian
 
+![Ubuntu](https://img.shields.io/badge/Ubuntu-26.04-E95420?logo=ubuntu&logoColor=white)
+![ROS 2](https://img.shields.io/badge/ROS_2-Lyrical-22314E?logo=ros&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.14-3776AB?logo=python&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-yellow)
+
 ROS 2 package that runs [Newton](https://github.com/newton-physics/newton) physics simulations as ROS 2 nodes ; the scene (environments, inputs, robots, sensors, solvers) is described in one YAML parameter file, allowing the simulator to be built and rebuilt at runtime.
 
 ## License
