@@ -11,6 +11,7 @@ if TYPE_CHECKING:
 
 _PANEL_MARGIN = 10
 _PANEL_ALPHA = 0.7
+_SKY_COLOR = (38.0 / 255.0, 36.0 / 255.0, 38.0 / 255.0)
 
 
 class NewtonianViewer:
@@ -21,6 +22,7 @@ class NewtonianViewer:
         """
         """
         self.gl = newton.viewer.ViewerGL()
+        self._render_setup()
         self._ui_setup()
         self.attach(sim=sim)
 
@@ -29,6 +31,7 @@ class NewtonianViewer:
         """
         self.sim = sim
         self.gl.set_model(model=sim.model)
+        self._render_planes()
         # register custom ui elements upon model changes
         if self.gl.gui is not None:
             self.gl.register_ui_callback(callback=self._ui_control, position="free")
@@ -77,6 +80,24 @@ class NewtonianViewer:
         Applies forces in the simulator's Newton GL viewer.
         """
         self.gl.apply_forces(state=state)
+
+    def _render_setup(self) -> None:
+        """
+        Sets the sky to one flat color.
+        """
+        renderer = self.gl.renderer
+        renderer.sky_upper = _SKY_COLOR
+        renderer.sky_lower = _SKY_COLOR
+
+    def _render_planes(self) -> None:
+        """
+        Removes the checker pattern from planes.
+        """
+        for batch in self.gl._shape_instances.values():
+            if batch.geo_type == newton.GeoType.PLANE:
+                materials = batch.materials.numpy()
+                materials[:, 2] = 0.0
+                batch.materials.assign(materials)
 
     def _ui_setup(self) -> None:
         """

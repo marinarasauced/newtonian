@@ -92,6 +92,7 @@ class Robot(Plugin):
                 inertia = np.asarray(robot_builder.body_inertia[b], dtype=np.float32).reshape(3, 3)
                 robot_builder.body_inertia[b] = wp.mat33(inertia + np.eye(3, dtype=np.float32) * body_armature)
 
+        apply_colors(builder=robot_builder, colors=p.subtree("colors"))
         lazy = apply_drives(builder=robot_builder, drives=p.subtree("drives"))
         apply_initial_joint_q(builder=robot_builder, values=p.subtree("initial_joint_q").as_kwargs(), where=f"{p.prefix}initial_joint_q")
 
@@ -224,6 +225,21 @@ def match(names: list[str], pattern: str | list[str]) -> list[int]:
     Returns indices of 'names' whose shorthand matches any glob in 'pattern'.
     """
     return [i for i, n in enumerate(names) if matches(name=shorthand(label=n), pattern=pattern)]
+
+
+def apply_colors(builder: newton.ModelBuilder, colors: Parameters) -> None:
+    """
+    """
+    for group in colors.children():
+        c = colors.subtree(group)
+        shapes = match(names=builder.shape_label, pattern=c.get(key="shapes"))
+        if not shapes:
+            raise ParameterError(f"{c.prefix}shapes {c.get(key='shapes')!r} matches no shape")
+        color = c.get(key="color")
+        if not isinstance(color, list) or len(color) != 3 or not all(isinstance(v, (int, float)) for v in color):
+            raise ParameterError(f"{c.prefix}color expected [r, g, b] but got {color!r}")
+        for s in shapes:
+            builder.shape_color[s] = (float(color[0]), float(color[1]), float(color[2]))
 
 
 def apply_drives(builder: newton.ModelBuilder, drives: Parameters) -> dict[int, tuple[float, float]]:

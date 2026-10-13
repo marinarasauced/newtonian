@@ -25,7 +25,7 @@ newtonian:
 
     environments:                       # multiple environments supported; wall_height in m
       ground: {type: "groundplane", mu: 1.0}
-      track: {type: "track", map: "package://newtonian/descriptions/tracks/oval.yaml", wall_height: 0.3}
+      track: {type: "track", map: "package://newtonian/descriptions/tracks/oval.yaml", wall_height: 0.3, color: [0.5, 0.5, 0.5]}
 
     robots:
       racecar:                          # name of robot (in case of multiple)
@@ -39,6 +39,10 @@ newtonian:
         drives:                         # 'none' | 'position' | 'velocity' | 'position_velocity' | 'effort'; ke N·m/rad, kd N·m·s/rad, effort_limit N·m
           wheels: {joints: "*_wheel_joint", mode: "velocity", ke: 0.0, kd: 2.0, effort_limit: 5.0}
           steering: {joints: "*_steer_joint", mode: "position", ke: 20.0, kd: 0.5}
+        colors:                         # shapes: glob on shape names; color: [r, g, b], 0 to 1
+          chassis: {shapes: "chassis", color: [0.6, 0.14, 0.2]}
+          lidar: {shapes: "lidar_body", color: [0.08, 0.07, 0.08]}
+          wheels: {shapes: "*_wheel_geom_*", color: [0.08, 0.07, 0.08]}
 
     sensors:                            # name of sensor (also the default topic); rate in Hz
       imu: {type: "imu", site: "imu", rate: 200.0, topic: "/racecar/sensors/imu"}

@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 class EnvironmentGroundPlane(Environment):
     """
     """
+    default_color = (0.8, 0.8, 0.8)
 
     def on_build(self, sim: NewtonianSimulator, builder: newton.ModelBuilder) -> None:
         """
