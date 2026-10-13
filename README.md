@@ -1,6 +1,6 @@
 # newtonian
 
-ROS 2 package that runs [Newton]() physics simulations as ROS 2 nodes ; the scene (environments, inputs, robots, sensors, solvers) is described in one YAML parameter file, allowing the simulator to be built and rebuilt at runtime.
+ROS 2 package that runs [Newton](https://github.com/newton-physics/newton) physics simulations as ROS 2 nodes ; the scene (environments, inputs, robots, sensors, solvers) is described in one YAML parameter file, allowing the simulator to be built and rebuilt at runtime.
 
 ## License
 
@@ -112,6 +112,8 @@ ros2 launch newtonian sim.launch.py config:=/path/to/your/scene.yaml
 ```
 
 ## Docs
+
+AI generated documentation from Claude Opus 5.5.
 
 | Page | Contents |
 |---|---|
