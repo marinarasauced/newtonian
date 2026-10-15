@@ -28,6 +28,8 @@
 | `robots has 2 entries but only one robot per sim is supported` | more than one robot | use one robot |
 | The viewer does not open on Wayland | GLFW uses Wayland | `export PYGLFW_LIBRARY_VARIANT=x11` |
 
+| `Couldn't find function overload for 'contact_force_fn'`, after `RuntimeWarning: MuJoCo dependency version mismatch with Newton's declared requirements` | `mujoco` or `mujoco_warp` is not the version that Newton needs | `pip install -r requirements.txt` |
+
 ## Runtime
 
 | Problem | Cause | Fix |
