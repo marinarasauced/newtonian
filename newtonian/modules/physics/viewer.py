@@ -34,7 +34,7 @@ class NewtonianViewer:
         """
         self.sim = sim
         self.gl.set_model(model=sim.model)
-        self._render_planes()
+        # self._render_planes()
         # register custom ui elements upon model changes
         if self.gl.gui is not None:
             self.gl.register_ui_callback(callback=self._ui_control, position="free")
@@ -97,15 +97,15 @@ class NewtonianViewer:
         renderer.sky_upper = _SKY_COLOR
         renderer.sky_lower = _SKY_COLOR
 
-    def _render_planes(self) -> None:
-        """
-        Removes the checker pattern from planes.
-        """
-        for batch in self.gl._shape_instances.values():
-            if batch.geo_type == newton.GeoType.PLANE:
-                materials = batch.materials.numpy()
-                materials[:, 2] = 0.0
-                batch.materials.assign(materials)
+    # def _render_planes(self) -> None:
+    #     """
+    #     Removes the checker pattern from planes.
+    #     """
+    #     for batch in self.gl._shape_instances.values():
+    #         if batch.geo_type == newton.GeoType.PLANE:
+    #             materials = batch.materials.numpy()
+    #             materials[:, 2] = 0.0
+    #             batch.materials.assign(materials)
 
     def _ui_setup(self) -> None:
         """

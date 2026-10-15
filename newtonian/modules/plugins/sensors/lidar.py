@@ -50,11 +50,11 @@ class _Base(SensorRaytrace):
         n = self.samples
         self.angles = np.linspace(start=self.angle_min, stop=self.angle_max, num=n)
 
-        rays = np.zeros(shape=(1, 1, n, 2, 3), dtype=np.float32)
-        rays[0, 0, :, 1, 0] = -np.sin(self.angles)
-        rays[0, 0, :, 1, 2] = -np.cos(self.angles)
+        rays = np.zeros(shape=(1, n, 1, 2, 3), dtype=np.float32)
+        rays[0, :, 0, 1, 0] = -np.sin(self.angles)
+        rays[0, :, 0, 1, 2] = -np.cos(self.angles)
         self.rays = cast(typ="wp.array4d[wp.vec3f]", val=wp.array(data=rays, dtype=wp.vec3f, device=sim.device))
-        self.depth = self.tracer.utils.create_depth_image_output(width=n, height=1, camera_count=1)
+        self.depth = self.tracer.allocate_image_depth(view_count=1, width=n, height=1)
         self.period = 1.0 / self.rate if self.rate > 0.0 else sim.frame_dt
 
     def _laserscan(self, stamp: Time, data: np.ndarray) -> LaserScan:
