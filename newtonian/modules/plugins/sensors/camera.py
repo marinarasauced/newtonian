@@ -50,7 +50,7 @@ class _Base(SensorRaytrace):
         self.width = p.get_int(key="width", default=640, at_least=1)
         self.height = p.get_int(key="height", default=480, at_least=1)
         self.fov = p.get_float(key="fov", default=1.0, above=0.0)
-        self.rays = self.tracer.utils.compute_camera_rays_pinhole(width=self.width, height=self.height, camera_fovs=self.fov)
+        self.rays = self.tracer.compute_camera_rays_pinhole(width=self.width, height=self.height, camera_fov=self.fov, device=sim.device)
 
     def _image(self, stamp: Time, data: np.ndarray, encoding: str, step: int) -> Image:
         """
@@ -81,7 +81,7 @@ class SensorCameraColor(_Base):
         """
         super().on_model(sim=sim)
 
-        self.color = self.tracer.utils.create_color_image_output(width=self.width, height=self.height, camera_count=1)
+        self.color = self.tracer.allocate_image_color(view_count=1, width=self.width, height=self.height)
 
     def to_msg(self, stamp: Time) -> Image:
         """
@@ -111,7 +111,7 @@ class SensorCameraDepth(_Base):
         """
         super().on_model(sim=sim)
 
-        self.depth = self.tracer.utils.create_depth_image_output(width=self.width, height=self.height, camera_count=1)
+        self.depth = self.tracer.allocate_image_depth_forward(view_count=1, width=self.width, height=self.height)
 
     def to_msg(self, stamp: Time) -> Image:
         """
