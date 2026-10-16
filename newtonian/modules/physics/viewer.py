@@ -4,6 +4,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import newton
+import numpy as np
+import warp as wp
 
 if TYPE_CHECKING:
     from newtonian.modules.physics.simulator import NewtonianSimulator
@@ -76,6 +78,21 @@ class NewtonianViewer:
         if contacts is not None:
             self.gl.log_contacts(contacts=contacts, state=state)
         self.gl.end_frame()
+
+    def draw_lines(self, name: str, starts: np.ndarray | None, ends: np.ndarray | None, colors: np.ndarray | None, device: wp.Device, width: float = 1.5) -> None:
+        """
+        Draws line segments from 'starts' to 'ends' (N, 3) with 'colors' (N, 3) as the batch 'name', or hides the batch when they are 'None'. The viewer has one line width in pixels for all batches.
+        """
+        if starts is None or ends is None or colors is None:
+            self.gl.log_lines(name=name, starts=None, ends=None, colors=None)
+            return
+        self.gl.renderer.line_width = width
+        self.gl.log_lines(
+            name=name,
+            starts=wp.array(starts, dtype=wp.vec3, device=device),
+            ends=wp.array(ends, dtype=wp.vec3, device=device),
+            colors=wp.array(colors, dtype=wp.vec3, device=device),
+        )
 
     def close(self) -> None:
         """

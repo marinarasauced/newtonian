@@ -51,6 +51,7 @@ newtonian:
       joint_states: {type: "jointstate", rate: 45.0, topic: "/racecar/sensors/jointstate"}
 
     inputs:
+      
       racecar:                          # name of input (in case of multiple)
         type: "racecar"
         topic: "/racecar/control"
@@ -65,3 +66,9 @@ newtonian:
           front_right: "front_right_wheel_joint"
           rear_left: "rear_left_wheel_joint"
           rear_right: "rear_right_wheel_joint"
+
+      rollouts:                         # visualization of mppi controller
+        type: "markers"
+        topic: "/racecar/debug/rollouts"
+        timeout: 0.5
+        line_width: 3.0
