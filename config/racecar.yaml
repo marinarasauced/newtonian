@@ -25,13 +25,13 @@ newtonian:
 
     environments:                       # multiple environments supported; wall_height in m
       ground: {type: "groundplane", mu: 1.0}
-      track: {type: "track", map: "package://newtonian/descriptions/tracks/oval.yaml", wall_height: 0.3, color: [0.5, 0.5, 0.5]}
+      track: {type: "track", map: "package://newtonian/descriptions/racecar/tracks/poire/poire.yaml", wall_height: 0.3, color: [0.5, 0.5, 0.5]}
 
     robots:
       racecar:                          # name of robot (in case of multiple)
         type: "mjcf"                    # 'mjcf' | 'urdf' | 'usd'
-        file: "package://newtonian/descriptions/racecar.xml"
-        pose: [0.0, -3.0, 0.0, 0.0, 0.0, 0.0]  # m, rad: x, y, z, roll, pitch, yaw
+        file: "package://newtonian/descriptions/racecar/racecar.xml"
+        pose: [0.0, -7.5, 0.0, 0.0, 0.0, 0.0]  # m, rad: x, y, z, roll, pitch, yaw
         floating: true                  # default for floating base robot
         loader_args:
           enable_self_collisions: false
