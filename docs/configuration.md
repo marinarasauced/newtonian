@@ -38,7 +38,7 @@ Entries are built in file order. To set a different order, add a `names` list to
 
 | Form | Example |
 |---|---|
-| package path | `package://newtonian/descriptions/racecar.xml` |
+| package path | `package://newtonian/descriptions/racecar/racecar.xml` |
 | Newton asset | `newton://<asset name>` |
 | file path | `/home/me/robots/arm.urdf`, `~/robots/arm.urdf` |
 
@@ -143,7 +143,16 @@ All types also accept:
 | `negate` | `1` inverts the image (default `0`) |
 | `occupied_thresh` | occupancy above this value is a wall (default `0.65`) |
 
-Dark pixels are occupied. Each block of occupied pixels becomes a box wall of `wall_height`.
+Dark pixels are occupied. Each block of occupied pixels becomes a box wall of `wall_height`. All walls have the same height and color. Gray and white pixels are free, and any dark pixel is a wall, also one outside the corridor.
+
+The package has two racecar maps, in `descriptions/racecar/tracks/<name>/<name>.yaml`:
+
+| Map | Shape |
+|---|---|
+| `oval` | oval, 20 × 10 m |
+| `poire` | pear with a stem and a leaf, 16 × 21.5 m |
+
+A track is two wall outlines, one outer and one inner, on a free background. The outlines are 2 pixels (0.1 m at `resolution` 0.05) thick, and the corridor between them is 2 m wide. The stem and the leaf of `poire` are outlines of the same thickness outside the corridor. They are walls, and do not change the driving.
 
 ## `robots`
 
@@ -244,7 +253,7 @@ Noise is Gaussian with the given standard deviation. `sim.seed` sets the noise s
 | `robot` | the only robot | robot name |
 | `timeout` | per type | s; see the types below. `0` keeps the last command |
 
-The first message on any input turns on the [lazy drives](#robots) of its robot.
+The first message on a `racecar` or `jointstate` input turns on the [lazy drives](#robots) of its robot. A `markers` input does not.
 
 **Types:**
 
@@ -252,6 +261,7 @@ The first message on any input turns on the [lazy drives](#robots) of its robot.
 |---|---|---|
 | `racecar` | `geometry_msgs/Twist` | Ackermann steering. `linear.x` is speed (m/s), `angular.z` is yaw rate (rad/s). Default `timeout` 0.5 s; after the timeout, the car stops at `max_decel` and the steering goes to 0 |
 | `jointstate` | `sensor_msgs/JointState` | joint targets by name. `position` and `velocity` set the drive targets; `effort` sets a feed-forward force. Missing or NaN values and unknown names are ignored. Default `timeout` 0; the targets stay after a timeout |
+| `markers` | `visualization_msgs/MarkerArray` | draws the `LINE_LIST` and `LINE_STRIP` markers in the viewer, for example the rollouts of a planner. It does not command the robot. Default `timeout` 0.5 s of simulation time; with no new message for this time, the lines are hidden |
 
 **`racecar` keys:**
 
@@ -266,3 +276,11 @@ The first message on any input turns on the [lazy drives](#robots) of its robot.
 | `wheel_joints` | | driven joints: `{front_left, front_right, rear_left, rear_right}` |
 
 Speed changes at `max_accel` or `max_decel`, and steering at `max_steer_rate`.
+
+**`markers` keys:**
+
+| Key | Default | Description |
+|---|---|---|
+| `line_width` | `2.0` | px; the viewer has one line width for all lines |
+
+Each marker is one batch of lines, named by its `ns` and `id`. A new message replaces the batch with the same `ns` and `id`. A line has the color of its first vertex (`colors`), or `color` when the marker has no `colors`. Other marker types are ignored. Nothing is drawn without `sim.viewer: "gl"`.

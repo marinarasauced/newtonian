@@ -61,7 +61,7 @@ newtonian/
             environments/    groundplane, track
             robots/          mjcf, urdf, usd
             sensors/         imu, lidar, camera, odometry, jointstate, contact
-            inputs/          racecar, jointstate
+            inputs/          racecar, jointstate, markers
             solvers/         mujoco, featherstone, kamino, xpbd
 
 config/                      parameter files
@@ -104,7 +104,7 @@ With `--symlink-install`, changes to the existing Python code and to the `config
 
 ## Usage
 
-Start the example scene of a racecar on an oval track.
+Start the example scene of a racecar on a pear-shaped track.
 
 ```zsh
 ros2 launch newtonian sim.launch.py
