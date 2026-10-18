@@ -6,13 +6,20 @@ from setuptools import find_packages, setup
 
 
 PACKAGE = 'newtonian'
+HERE = os.path.dirname(os.path.realpath(__file__))
 VERSION = ET.parse('package.xml').getroot().findtext('version')
+
+
+def files(pattern: str) -> list[str]:
+    """
+    """
+    return [os.path.relpath(f, HERE) for f in glob(os.path.join(HERE, pattern))]
 
 
 def tree(source: str) -> list[tuple[str, list[str]]]:
     """
     """
-    return [(os.path.join('share', PACKAGE, root), [os.path.join(root, f) for f in files]) for root, _, files in os.walk(source)]
+    return [(os.path.join('share', PACKAGE, os.path.relpath(root, HERE)), [os.path.relpath(os.path.join(root, f), HERE) for f in files]) for root, _, files in os.walk(os.path.join(HERE, source))]
 
 
 setup(
